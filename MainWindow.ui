@@ -37,7 +37,7 @@
            </size>
           </property>
           <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
+           <enum>QFrame::NoFrame</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
@@ -58,7 +58,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="dashboardButton">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
@@ -83,7 +83,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="skywardButton">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
@@ -111,7 +111,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="gpaButton">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
@@ -149,7 +149,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="refreshButton">
           <property name="maximumSize">
            <size>
             <width>28</width>
@@ -173,7 +173,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="lastRefreshedLabel">
         <property name="font">
          <font>
           <family>Poppins Medium</family>
@@ -185,7 +185,7 @@
          <string>Last Refreshed: 00/00/00</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
         </property>
        </widget>
       </item>
@@ -199,7 +199,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QListWidget" name="listWidget_2">
+         <widget class="QListWidget" name="classesFilter">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -286,7 +286,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="page">
            <layout class="QGridLayout" name="gridLayout">
@@ -303,7 +303,7 @@
              <number>0</number>
             </property>
             <item row="0" column="0">
-             <widget class="QTreeWidget" name="treeWidget">
+             <widget class="QTreeWidget" name="classViewWidget">
               <property name="font">
                <font>
                 <family>Poppins Medium</family>
@@ -343,7 +343,7 @@
              <number>0</number>
             </property>
             <item row="0" column="0">
-             <widget class="QTableWidget" name="tableWidget">
+             <widget class="QTableWidget" name="skywardTable">
               <property name="font">
                <font>
                 <family>Poppins Medium</family>
@@ -466,7 +466,7 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QListWidget" name="listWidget">
+           <widget class="QListWidget" name="weeksFilter">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
