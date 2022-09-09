@@ -15,10 +15,6 @@ class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
         uic.loadUi("MainWindow.ui", self)
-
-        # find the widgets in the xml file
-        self.weeksFilter = self.findChild(QtWidgets.QListWidget, "weeksFilter")
-        self.weeksFilterFrame = self.findChild(QtWidgets.QFrame, "weeksFilterFrame")
         
         # set minimum width
         self.weeksFilter.setSpacing(5)
@@ -26,9 +22,21 @@ class UI(QMainWindow):
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
         
+        # set button connections
+        self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
+        self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
+        self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
         
         # show ui
         self.show()
+
+    def title_bar_button_clicked(self, button, checked):
+        _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton]
+        if not checked:
+            _buttons[button].setChecked(True)  # force the button to stay checked
+        _buttons.pop(button)
+        for b in _buttons:
+            b.setChecked(False)
 
 
 if __name__ == "__main__":
