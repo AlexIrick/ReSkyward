@@ -250,7 +250,7 @@
               <property name="font">
                <font>
                 <family>Poppins</family>
-                <pointsize>11</pointsize>
+                <pointsize>10</pointsize>
                </font>
               </property>
               <property name="frameShape">
