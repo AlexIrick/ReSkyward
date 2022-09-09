@@ -3,3 +3,4 @@ SkywardExport.json
 # Exclude compiled pyc files
 *.pyc
 __pycache__
+.idea
