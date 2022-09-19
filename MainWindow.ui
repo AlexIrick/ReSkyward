@@ -200,7 +200,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -807,7 +807,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="lineEdit">
+                   <widget class="QLineEdit" name="usernameInput">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -845,10 +845,13 @@
                     <property name="text">
                      <string>Password:</string>
                     </property>
+                    <property name="alignment">
+                     <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                    </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_2">
+                   <widget class="QLineEdit" name="passwordInput">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                       <horstretch>0</horstretch>
@@ -875,7 +878,12 @@
                  </layout>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox">
+                 <widget class="QCheckBox" name="showPasswordCheck">
+                  <property name="font">
+                   <font>
+                    <family>Poppins Medium</family>
+                   </font>
+                  </property>
                   <property name="text">
                    <string>Show Password</string>
                   </property>
