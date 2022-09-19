@@ -89,8 +89,8 @@ if __name__ == "__main__":
     
     # parser
     parser = argparse.ArgumentParser(description='Parse data')
-    parser.add_argument('-h', help='HTML file')
-    parser.add_argument('-d', help='JSON data file')
+    parser.add_argument('--html', help='HTML file')
+    parser.add_argument('-d', '--data', help='JSON data file')
     args = parser.parse_args()
     
     with open(args.h, 'r') as htm:

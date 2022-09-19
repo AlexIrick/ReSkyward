@@ -4,6 +4,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5 import uic
 import sys, os
 from glob import glob
+import json
+from itertools import chain
 
 try:
     sys.path.append(sys._MEIPASS)
@@ -26,9 +28,16 @@ class UI(QMainWindow):
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
-        
-        # show ui
         self.show()
+
+    def load_skyward(self):
+        with open('SkywardExport.json') as f:
+            skyward_data = json.load(f.read()) # read data
+        self.headers = {
+            i['text']: {'tooltip': i['tooltip'], 'highlighted': i['highlighted']}
+            for i in skyward_data[0][0]['headers'][1:]  # get student data
+        }
+        self.skyward_data = chain.from_iterable([x[1:] for x in self.skyward_data])  # merge all classes together, skipping headers
 
     def title_bar_button_clicked(self, button, checked):
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton]
@@ -43,9 +52,8 @@ if __name__ == "__main__":
     # initialize app
     app = QApplication(sys.argv)
     # set style and fonts
-    app.setStyle('Fusion')
+    # app.setStyle('Fusion')
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
-    
     MainWindow = QtWidgets.QMainWindow()
     
     # disable DPI scaling
