@@ -4,3 +4,4 @@ SkywardExport.json
 *.pyc
 __pycache__
 .idea
+encrypted.bin
