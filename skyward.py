@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup as bs
 import time
 import yaml
 import re
+import getpass
 import scrape
 
 def GetSkywardPage(username, password):
@@ -152,5 +153,5 @@ def GetSkywardPage(username, password):
 
 if __name__ == "__main__":
     username = input("> Username: ")
-    password = input("> Password: ")
+    password = getpass.getpass(prompt='> Password: ', stream=None)
     GetSkywardPage(username, password)
