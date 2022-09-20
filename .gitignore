@@ -1,5 +1,7 @@
 # Exclude personal Skyward export files
 SkywardExport.json
+output.html
+data
 # Exclude compiled pyc files
 *.pyc
 __pycache__

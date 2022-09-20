@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as bs
 import json
+import re
 
 
 class ParseData:
@@ -73,8 +74,15 @@ class ParseData:
         tab_dict.extend(self.handle_tb(table['tb']['r']))
         # remove dropped classes
         tab_dict = [k for k in tab_dict if not(k.get('class_info') and k['class_info'].get('dropped'))]
+        for j, class_ in enumerate(tab_dict): # for every class
+            if "headers" in class_:
+                continue
+            file_name = 'data/'+re.sub(r'[\W_]+', '-', class_['class_info']['class'].lower())+'.json'
+            with open(file_name, 'w') as f:
+                json.dump(class_['assignments'], f, indent=4)
+            tab_dict[j]['assignments'] = file_name
         return tab_dict
-
+            
     def run(self):
         tables = [self.grid_object_to_grid(table) for table in self.data.values()]
         with open('SkywardExport.json', 'w') as f:
@@ -93,8 +101,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--data', help='JSON data file')
     args = parser.parse_args()
     
-    with open(args.h, 'r') as htm:
+    with open(args.html, 'r') as htm:
         soup = bs(htm.read(), 'lxml')
-    with open(args.d, 'r') as f:
+    with open(args.data, 'r') as f:
         data = json.load(f)
     ParseData(soup, data).run()
