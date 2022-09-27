@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup as bs
 import json
 import re
+from titlecase import titlecase
 
 
 class ParseData:
@@ -18,6 +19,13 @@ class ParseData:
             'highlighted': ('sf_highlightYellow' in h_div['class'])
         }.items() if value}
     
+    @staticmethod
+    def abbreviations(word, **kwargs):
+        if len(word) < 3 and word.upper() != 'OF':
+            return word.upper()
+        elif word.upper() == 'ADVANCED':
+            return 'Adv'
+    
     def get_assign_row_info(self, a_div):
         a = a_div.find('a')
         return {key: value for key, value in {
@@ -29,7 +37,7 @@ class ParseData:
     def get_class_info(self, cId):
         class_div = self.soup.find('div', id=cId)
         return {
-            'class': class_div.find('span').text.strip(),
+            'class': titlecase(class_div.find('span').text.strip(), callback=self.abbreviations),
             'dropped': (dropped.text.strip() == "(Dropped)") if (dropped := class_div.find('span', class_='fXs')) else False,
             'period': ' '.join(class_div.find_all('td')[2].text.split()),
             'teacher': class_div.find_all('td')[3].text.strip(),

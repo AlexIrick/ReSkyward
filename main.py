@@ -39,18 +39,27 @@ class UI(QMainWindow):
         self.show()
         self.load_skyward()
 
-    def load_skyward(self):
+    def load_skyward_data(self):
         with open('SkywardExport.json') as f:
             skyward_data = json.load(f) # read data
         self.headers = skyward_data[0][0]['headers'][1:]
         self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+    
+    def load_skyward(self):
+        self.load_skyward_data()
         # load data to table
         self.skywardTable.clear()
+        self.classesFilter.clear()
+        self.classesFilter.addItem('All')
         for n, data in enumerate(self.headers):
             # add text to table header
             self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
         for n, data in enumerate(self.skyward_data):
             table_item = QtWidgets.QTableWidgetItem(data['class_info']['class'])
+            item = QtWidgets.QListWidgetItem()
+            item.setText(data['class_info']['class'])
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            self.classesFilter.addItem(item)
             for m, data in enumerate(data['grades']):
                 self.skywardTable.setItem(n, m, self.create_table_item(data))
             self.skywardTable.setVerticalHeaderItem(n, table_item)
