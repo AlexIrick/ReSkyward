@@ -1,4 +1,3 @@
-from typing_extensions import Self
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5 import uic
@@ -38,17 +37,33 @@ class UI(QMainWindow):
         self.refreshButton.clicked.connect(self.refresh_button_clicked)
 
         self.show()
+        self.load_skyward()
 
     def load_skyward(self):
-
-
         with open('SkywardExport.json') as f:
-            skyward_data = json.load(f.read()) # read data
-        self.headers = {
-            i['text']: {'tooltip': i['tooltip'], 'highlighted': i['highlighted']}
-            for i in skyward_data[0][0]['headers'][1:]  # get student data
-        }
-        self.skyward_data = chain.from_iterable([x[1:] for x in self.skyward_data])  # merge all classes together, skipping headers
+            skyward_data = json.load(f) # read data
+        self.headers = skyward_data[0][0]['headers'][1:]
+        self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+        # load data to table
+        self.skywardTable.clear()
+        for n, data in enumerate(self.headers):
+            # add text to table header
+            self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
+        for n, data in enumerate(self.skyward_data):
+            table_item = QtWidgets.QTableWidgetItem(data['class_info']['class'])
+            for m, data in enumerate(data['grades']):
+                self.skywardTable.setItem(n, m, self.create_table_item(data))
+            self.skywardTable.setVerticalHeaderItem(n, table_item)
+        
+    @staticmethod
+    def create_table_item(data):
+        table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
+        if data.get('highlighted'):
+            table_item.setBackground(QtGui.QColor(255, 255, 120))
+        if data.get('tooltip'):
+            table_item.setToolTip(data['tooltip'])
+        return table_item
+        
 
     def title_bar_button_clicked(self, button, checked):
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
@@ -69,9 +84,8 @@ class UI(QMainWindow):
         # nonce = cipher.nonce
         ciphertext, tag = cipher.encrypt_and_digest(data)
 
-        file_out = open("encrypted.bin", "wb")
-        [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
-        file_out.close()
+        with open("encrypted.bin", "wb") as file_out:
+            [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
 
     def refresh_button_clicked(self):
         # self.load_skyward()

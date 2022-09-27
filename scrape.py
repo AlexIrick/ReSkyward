@@ -57,7 +57,7 @@ class ParseData:
                 class_row_index = len(rows)
                 rows.append({
                     'class_info': self.get_class_info(cId),
-                    'grades': [self.get_row_info(self.get_h_div(c['h'], 'td'), 'grade') for c in d['c'][1:]],
+                    'grades': [self.get_row_info(self.get_h_div(c['h'], 'td')) for c in d['c'][1:]],
                     'assignments': []
                 })
             # ASSIGNMENTS
