@@ -792,107 +792,158 @@
                 <item row="0" column="0">
                  <layout class="QVBoxLayout" name="verticalLayout">
                   <item>
-                   <layout class="QVBoxLayout" name="verticalLayout_6">
-                    <property name="spacing">
+                   <layout class="QVBoxLayout" name="loginVLayout">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QLabel" name="label">
+                     <layout class="QVBoxLayout" name="verticalLayout_6">
+                      <property name="spacing">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QLabel" name="label">
+                        <property name="font">
+                         <font>
+                          <family>Poppins Medium</family>
+                         </font>
+                        </property>
+                        <property name="text">
+                         <string>Username:</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="usernameInput">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimumSize">
+                         <size>
+                          <width>0</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>300</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QVBoxLayout" name="verticalLayout_7">
+                      <property name="spacing">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QLabel" name="label_2">
+                        <property name="font">
+                         <font>
+                          <family>Poppins Medium</family>
+                         </font>
+                        </property>
+                        <property name="text">
+                         <string>Password:</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="passwordInput">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimumSize">
+                         <size>
+                          <width>0</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>300</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                        <property name="echoMode">
+                         <enum>QLineEdit::Password</enum>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="showPasswordCheck">
                       <property name="font">
                        <font>
                         <family>Poppins Medium</family>
                        </font>
                       </property>
                       <property name="text">
-                       <string>Username:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLineEdit" name="usernameInput">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="minimumSize">
-                       <size>
-                        <width>0</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>300</width>
-                        <height>16777215</height>
-                       </size>
+                       <string>Show Password</string>
                       </property>
                      </widget>
                     </item>
                    </layout>
                   </item>
                   <item>
-                   <layout class="QVBoxLayout" name="verticalLayout_7">
-                    <property name="spacing">
-                     <number>0</number>
-                    </property>
+                   <layout class="QHBoxLayout" name="logoutContainer">
                     <item>
-                     <widget class="QLabel" name="label_2">
+                     <widget class="QPushButton" name="logoutButton">
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                       <property name="font">
                        <font>
                         <family>Poppins Medium</family>
                        </font>
                       </property>
                       <property name="text">
-                       <string>Password:</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                       <string>Logout</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="passwordInput">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
+                     <spacer name="horizontalSpacer_5">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
                       </property>
-                      <property name="minimumSize">
+                      <property name="sizeHint" stdset="0">
                        <size>
-                        <width>0</width>
-                        <height>0</height>
+                        <width>40</width>
+                        <height>20</height>
                        </size>
                       </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>300</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="echoMode">
-                       <enum>QLineEdit::Password</enum>
-                      </property>
-                     </widget>
+                     </spacer>
                     </item>
                    </layout>
-                  </item>
-                  <item>
-                   <widget class="QCheckBox" name="showPasswordCheck">
-                    <property name="font">
-                     <font>
-                      <family>Poppins Medium</family>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Show Password</string>
-                    </property>
-                   </widget>
                   </item>
                   <item>
                    <spacer name="verticalSpacer">

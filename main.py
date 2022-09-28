@@ -1,3 +1,4 @@
+from Crypto.Random import get_random_bytes
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
@@ -97,11 +98,23 @@ class UI(QMainWindow):
             b.setChecked(False)
         self.tabsStackedWidget.setCurrentIndex(button)
 
+    def run_scraper(self, username, password):
+        skyward.GetSkywardPage(username, password)
+        self.database_refreshed.emit()
+
     def save_button_clicked(self):
+        print('saving')
         self.skywardUsername = self.usernameInput.text()
         self.skywardPassword = self.passwordInput.text().encode()
         # encrypt password
-        key = b'Sixteen byte key'
+        if not os.path.exists('aes.bin'):
+            key = get_random_bytes(32)
+            with open('aes.bin', 'wb') as file_out:
+                file_out.write(key)
+        else:
+            with open('aes.bin', 'rb') as f:
+                key = f.read()
+        # print(key)
         data = self.skywardPassword
         cipher = AES.new(key, AES.MODE_EAX)
         # nonce = cipher.nonce
@@ -110,26 +123,26 @@ class UI(QMainWindow):
         with open("encrypted.bin", "wb") as file_out:
             [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
 
-    def run_scraper(self, username, password):
-        skyward.GetSkywardPage(username, password)
-        self.database_refreshed.emit()
-
     def refresh_button_clicked(self):
-        # self.load_skyward()
         # get password and decrypt
-        key = b'Sixteen byte key'
-        file_in = open("encrypted.bin", "rb")
-        nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+        # key = b'Sixteen byte key'
+        with open("aes.bin", "rb") as file_in:
+            key = file_in.read()
+
+        with open("encrypted.bin", "rb") as file_in:
+            nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+
         cipher = AES.new(key, AES.MODE_EAX, nonce)
-        data = cipher.decrypt_and_verify(ciphertext, tag)
-        print(data)
+        data = cipher.decrypt_and_verify(ciphertext, tag).decode()
         # run scraper
         self.lastRefreshedLabel.setText('Refreshing...')
         Thread(
             target=self.run_scraper,
-            args=(self.usernameInput.text(), self.passwordInput.text()),
+            args=(self.skywardUsername, data),
             daemon=True
         ).start()
+
+        print(data, type(data))
 
 
 if __name__ == "__main__":
