@@ -39,7 +39,7 @@ class UI(QMainWindow):
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
         self.settingsButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
         self.saveButton.clicked.connect(self.save_button_clicked)
-        self.refreshButton.clicked.connect(self.refresh_button_clicked)
+        self.refreshButton.clicked.connect(self.refresh_database)
 
         self.database_refreshed.connect(self.load_skyward)
         self.error_msg_signal.connect(lambda x: self.lastRefreshedLabel.setText(x))
@@ -111,7 +111,9 @@ class UI(QMainWindow):
             self.database_refreshed.emit()
 
     def save_button_clicked(self):
-        self.login()
+        if self.skywardUsername != self.usernameInput.text() or \
+                self.skywardPasswordBin != self.passwordInput.text().encode():
+            self.login()
 
     def login(self):
         print('saving')
@@ -137,7 +139,7 @@ class UI(QMainWindow):
         self.usernameInput.setText('')
         self.passwordInput.setText('')
 
-    def refresh_button_clicked(self):
+    def refresh_database(self):
         # get password and decrypt
         # key = b'Sixteen byte key'
         with open("aes.bin", "rb") as file_in:
@@ -156,7 +158,7 @@ class UI(QMainWindow):
             daemon=True
         ).start()
 
-        print(data, type(data))
+        # print(data, type(data))
 
 
 if __name__ == "__main__":
