@@ -25,7 +25,7 @@ class UI(QMainWindow):
 
         # set variables
         self.skywardUsername = ''
-        self.skywardPassword = ''
+        self.skywardPasswordBin = ''
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
@@ -111,9 +111,12 @@ class UI(QMainWindow):
             self.database_refreshed.emit()
 
     def save_button_clicked(self):
+        self.login()
+
+    def login(self):
         print('saving')
         self.skywardUsername = self.usernameInput.text()
-        self.skywardPassword = self.passwordInput.text().encode()
+        self.skywardPasswordBin = self.passwordInput.text().encode()
         # encrypt password
         if not os.path.exists('aes.bin'):
             key = get_random_bytes(32)
@@ -123,13 +126,16 @@ class UI(QMainWindow):
             with open('aes.bin', 'rb') as f:
                 key = f.read()
         # print(key)
-        data = self.skywardPassword
+        data = self.skywardPasswordBin
         cipher = AES.new(key, AES.MODE_EAX)
         # nonce = cipher.nonce
         ciphertext, tag = cipher.encrypt_and_digest(data)
 
         with open("encrypted.bin", "wb") as file_out:
             [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
+        self.loginLabel.setText(f'Logged in as {self.skywardUsername}')
+        self.usernameInput.setText('')
+        self.passwordInput.setText('')
 
     def refresh_button_clicked(self):
         # get password and decrypt
