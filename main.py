@@ -91,14 +91,14 @@ class UI(QMainWindow):
             table_item.setToolTip(data['tooltip'])
         return table_item
 
-    def title_bar_button_clicked(self, button, checked):
+    def title_bar_button_clicked(self, button_index, checked):
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
         if not checked:
-            _buttons[button].setChecked(True)  # force the button to stay checked
-        _buttons.pop(button)
+            _buttons[button_index].setChecked(True)  # force the button to stay checked
+        _buttons.pop(button_index)
         for b in _buttons:
             b.setChecked(False)
-        self.tabsStackedWidget.setCurrentIndex(button)
+        self.tabsStackedWidget.setCurrentIndex(button_index)
 
     def run_scraper(self, username, password):
         try:
@@ -106,6 +106,7 @@ class UI(QMainWindow):
         except skyward.SkywardLoginFailed:
             self.error_msg_signal.emit('Invalid login. Please try again.')
             self.loginLabel.setText(f'Login failed: {username}')
+            self.title_bar_button_clicked(3, False)
         except requests.exceptions.ConnectionError:
             self.error_msg_signal.emit('Network error. Please check your internet connection.')
         else:
@@ -113,8 +114,9 @@ class UI(QMainWindow):
             self.loginLabel.setText(f'Logged in as {username}')
 
     def save_button_clicked(self):
-        if self.skywardUsername != self.usernameInput.text() or \
-                self.skywardPasswordBin != self.passwordInput.text().encode():
+        if self.usernameInput.text() != '' and self.passwordInput.text() != '' and \
+                (self.skywardUsername != self.usernameInput.text() or
+                 self.skywardPasswordBin != self.passwordInput.text().encode()):
             self.login()
 
     def login(self):
