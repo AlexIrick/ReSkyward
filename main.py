@@ -120,7 +120,7 @@ class UI(QMainWindow):
     def login(self):
         print('saving')
         self.skywardUsername = self.usernameInput.text()
-        self.skywardPasswordBin = self.passwordInput.text().encode()
+        self.skywardPasswordBin = self.passwordInput.text()
         # encrypt password
         if not os.path.exists('aes.bin'):
             key = get_random_bytes(32)
@@ -130,7 +130,7 @@ class UI(QMainWindow):
             with open('aes.bin', 'rb') as f:
                 key = f.read()
         # print(key)
-        data = self.skywardPasswordBin
+        data = json.dumps([self.skywardUsername, self.skywardPasswordBin]).encode()
         cipher = AES.new(key, AES.MODE_EAX)
         # nonce = cipher.nonce
         ciphertext, tag = cipher.encrypt_and_digest(data)
@@ -156,7 +156,7 @@ class UI(QMainWindow):
         self.lastRefreshedLabel.setText('Refreshing...')
         Thread(
             target=self.run_scraper,
-            args=(self.skywardUsername, data),
+            args=json.loads(data),
             daemon=True
         ).start()
 
