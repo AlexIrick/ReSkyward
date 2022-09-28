@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup as bs
 import json
 import re
 from titlecase import titlecase
+from datetime import datetime
 
 
 class ParseData:
@@ -96,6 +97,9 @@ class ParseData:
         with open('SkywardExport.json', 'w') as f:
             json.dump(tables, f, indent=4)
         print('Done!')
+        # Store the refresh date
+        with open('data/updated.json', 'w') as f:
+            json.dump({'date': datetime.now().strftime(r"%b %d, %I:%M:%S %p")}, f, indent=4)
 
 
 if __name__ == "__main__":

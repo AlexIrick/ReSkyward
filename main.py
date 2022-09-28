@@ -1,11 +1,14 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import pyqtSignal
 from PyQt5 import uic
 import sys, os
 from glob import glob
 import json
+from threading import Thread
 from itertools import chain
 from Crypto.Cipher import AES
+import skyward
 
 try:
     sys.path.append(sys._MEIPASS)
@@ -36,14 +39,23 @@ class UI(QMainWindow):
         self.saveButton.clicked.connect(self.save_button_clicked)
         self.refreshButton.clicked.connect(self.refresh_button_clicked)
 
+        self.database_refreshed.connect(self.load_skyward)
+
         self.show()
         self.load_skyward()
 
+    database_refreshed = pyqtSignal()
+
     def load_skyward_data(self):
-        with open('SkywardExport.json') as f:
-            skyward_data = json.load(f) # read data
-        self.headers = skyward_data[0][0]['headers'][1:]
-        self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+        try:
+            with open('SkywardExport.json') as f:
+                skyward_data = json.load(f) # read data
+            self.headers = skyward_data[0][0]['headers'][1:]
+            self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+            with open('data/updated.json') as f:
+                self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
+        except FileNotFoundError:
+            self.lastRefreshedLabel.setText('Please log into Skyward')
     
     def load_skyward(self):
         self.load_skyward_data()
@@ -72,7 +84,6 @@ class UI(QMainWindow):
         if data.get('tooltip'):
             table_item.setToolTip(data['tooltip'])
         return table_item
-        
 
     def title_bar_button_clicked(self, button, checked):
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
@@ -96,6 +107,10 @@ class UI(QMainWindow):
         with open("encrypted.bin", "wb") as file_out:
             [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
 
+    def run_scraper(self, username, password):
+        skyward.GetSkywardPage(username, password)
+        self.database_refreshed.emit()
+
     def refresh_button_clicked(self):
         # self.load_skyward()
         # get password and decrypt
@@ -105,6 +120,13 @@ class UI(QMainWindow):
         cipher = AES.new(key, AES.MODE_EAX, nonce)
         data = cipher.decrypt_and_verify(ciphertext, tag)
         print(data)
+        # run scraper
+        self.lastRefreshedLabel.setText('Refreshing...')
+        Thread(
+            target=self.run_scraper,
+            args=(self.usernameInput.text(), self.passwordInput.text()),
+            daemon=True
+        ).start()
 
 
 if __name__ == "__main__":
