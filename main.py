@@ -104,7 +104,7 @@ class UI(QMainWindow):
         try:
             skyward.GetSkywardPage(username, password)
         except skyward.SkywardLoginFailed:
-            self.database_refreshed.emit('Invalid login. Please try again.')
+            self.error_msg_signal.emit('Invalid login. Please try again.')
         except requests.exceptions.ConnectionError:
             self.error_msg_signal.emit('Network error. Please check your internet connection.')
         else:
