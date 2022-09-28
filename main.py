@@ -54,11 +54,14 @@ class UI(QMainWindow):
             self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
             with open('data/updated.json') as f:
                 self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
+            return True
         except FileNotFoundError:
             self.lastRefreshedLabel.setText('Please log into Skyward')
+            return False
     
     def load_skyward(self):
-        self.load_skyward_data()
+        if not self.load_skyward_data():
+            return
         # load data to table
         self.skywardTable.clear()
         self.classesFilter.clear()
