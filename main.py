@@ -10,6 +10,7 @@ from threading import Thread
 from itertools import chain
 from Crypto.Cipher import AES
 import skyward
+import requests.exceptions
 
 try:
     sys.path.append(sys._MEIPASS)
@@ -41,24 +42,25 @@ class UI(QMainWindow):
         self.refreshButton.clicked.connect(self.refresh_button_clicked)
 
         self.database_refreshed.connect(self.load_skyward)
+        self.error_msg_signal.connect(lambda x: self.lastRefreshedLabel.setText(x))
 
         self.show()
         self.load_skyward()
 
     database_refreshed = pyqtSignal()
+    error_msg_signal = pyqtSignal(str)
 
     def load_skyward_data(self):
-        try:
-            with open('SkywardExport.json') as f:
-                skyward_data = json.load(f) # read data
-            self.headers = skyward_data[0][0]['headers'][1:]
-            self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
-            with open('data/updated.json') as f:
-                self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
-            return True
-        except FileNotFoundError:
+        if not os.path.exists('data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
             return False
+        with open('data/SkywardExport.json') as f:
+            skyward_data = json.load(f) # read data
+        self.headers = skyward_data[0][0]['headers'][1:]
+        self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+        with open('data/updated.json') as f:
+            self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
+        return True
     
     def load_skyward(self):
         if not self.load_skyward_data():
@@ -99,8 +101,14 @@ class UI(QMainWindow):
         self.tabsStackedWidget.setCurrentIndex(button)
 
     def run_scraper(self, username, password):
-        skyward.GetSkywardPage(username, password)
-        self.database_refreshed.emit()
+        try:
+            skyward.GetSkywardPage(username, password)
+        except skyward.SkywardLoginFailed:
+            self.database_refreshed.emit('Invalid login. Please try again.')
+        except requests.exceptions.ConnectionError:
+            self.error_msg_signal.emit('Network error. Please check your internet connection.')
+        else:
+            self.database_refreshed.emit()
 
     def save_button_clicked(self):
         print('saving')

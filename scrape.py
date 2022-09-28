@@ -3,6 +3,7 @@ import json
 import re
 from titlecase import titlecase
 from datetime import datetime
+import os
 
 
 class ParseData:
@@ -37,12 +38,12 @@ class ParseData:
         
     def get_class_info(self, cId):
         class_div = self.soup.find('div', id=cId)
-        return {
-            'class': titlecase(class_div.find('span').text.strip(), callback=self.abbreviations),
-            'dropped': (dropped.text.strip() == "(Dropped)") if (dropped := class_div.find('span', class_='fXs')) else False,
-            'period': ' '.join(class_div.find_all('td')[2].text.split()),
-            'teacher': class_div.find_all('td')[3].text.strip(),
-        }
+        class_name = titlecase(class_div.find('span').text.strip(), callback=self.abbreviations)
+        return {'class': class_name,
+                'id': cId,
+                'dropped': (dropped.text.strip() == "(Dropped)") if (dropped := class_div.find('span', class_='fXs')) else False,
+                'period': ' '.join(class_div.find_all('td')[2].text.split()),
+                'teacher': class_div.find_all('td')[3].text.strip()}
     
     def get_assignment_info(self, a_name, a_div):
         return {key: value for key, value in {
@@ -93,8 +94,10 @@ class ParseData:
         return tab_dict
             
     def run(self):
+        if not os.path.exists('data'):
+            os.mkdir('data')
         tables = [self.grid_object_to_grid(table) for table in self.data.values()]
-        with open('SkywardExport.json', 'w') as f:
+        with open('data/SkywardExport.json', 'w') as f:
             json.dump(tables, f, indent=4)
         print('Done!')
         # Store the refresh date

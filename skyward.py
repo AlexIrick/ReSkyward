@@ -6,6 +6,12 @@ import re
 import getpass
 import scrape
 
+
+class SkywardLoginFailed(Exception):
+    """Raised when the Skyward login fails"""
+    pass
+
+
 def GetSkywardPage(username, password):
     session = requests.session()
     headers = {
@@ -27,7 +33,6 @@ def GetSkywardPage(username, password):
 
 
     ## INITAL PAGE ##
-
     r_init = session.get("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w")
 
     print('SENDING REQUEST 1')
@@ -79,7 +84,8 @@ def GetSkywardPage(username, password):
 
     r_login = session.post("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/skyporthttp.w", data=_1_data)
     session_data = bs(r_login.text, 'lxml').find('li').text.split('^')
-
+    if len(session_data) < 4:
+        raise SkywardLoginFailed("Login Failed")
 
     ## HOME ##
 
