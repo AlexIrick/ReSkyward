@@ -105,10 +105,12 @@ class UI(QMainWindow):
             skyward.GetSkywardPage(username, password)
         except skyward.SkywardLoginFailed:
             self.error_msg_signal.emit('Invalid login. Please try again.')
+            self.loginLabel.setText(f'Login failed: {username}')
         except requests.exceptions.ConnectionError:
             self.error_msg_signal.emit('Network error. Please check your internet connection.')
         else:
             self.database_refreshed.emit()
+            self.loginLabel.setText(f'Logged in as {username}')
 
     def save_button_clicked(self):
         if self.skywardUsername != self.usernameInput.text() or \
@@ -135,9 +137,9 @@ class UI(QMainWindow):
 
         with open("encrypted.bin", "wb") as file_out:
             [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
-        self.loginLabel.setText(f'Logged in as {self.skywardUsername}')
-        self.usernameInput.setText('')
-        self.passwordInput.setText('')
+        self.refresh_database()
+        self.usernameInput.clear()
+        self.passwordInput.clear()
 
     def refresh_database(self):
         # get password and decrypt
