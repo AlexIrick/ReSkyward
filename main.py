@@ -11,6 +11,8 @@ from itertools import chain
 from Crypto.Cipher import AES
 import skyward
 import requests.exceptions
+import darkdetect
+import ctypes as ct
 
 try:
     sys.path.append(sys._MEIPASS)
@@ -42,18 +44,35 @@ class UI(QMainWindow):
         self.refreshButton.clicked.connect(self.refresh_database)
 
         self.database_refreshed.connect(self.load_skyward)
-        self.error_msg_signal.connect(lambda x: self.lastRefreshedLabel.setText(x))
+        self.error_msg_signal.connect(self.error_msg_signal_handler)
 
+        # set dark title bar
+        if dark_mode:
+            dark_title_bar(int(self.winId()))
+        
         self.show()
         self.load_skyward()
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
 
+    def error_msg_signal_handler(self, msg):
+        self.lastRefreshedLabel.setText(msg)
+        self.message_box('ReSkyward - Error', msg)
+
+    def message_box(self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok):
+        msg_box = QtWidgets.QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        msg_box.setIcon(icon)
+        msg_box.setStandardButtons(buttons)
+        dark_title_bar(int(msg_box.winId()))
+        return msg_box.exec_()
+
     def load_skyward_data(self):
         if not os.path.exists('data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
-            return False
+            return
         with open('data/SkywardExport.json') as f:
             skyward_data = json.load(f) # read data
         self.headers = skyward_data[0][0]['headers'][1:]
@@ -86,7 +105,10 @@ class UI(QMainWindow):
     def create_table_item(data):
         table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
         if data.get('highlighted'):
-            table_item.setBackground(QtGui.QColor(255, 255, 120))
+            if dark_mode:
+                table_item.setBackground(QtGui.QColor(59, 77, 100))
+            else:
+                table_item.setBackground(QtGui.QColor(255, 255, 120))
         if data.get('tooltip'):
             table_item.setToolTip(data['tooltip'])
         return table_item
@@ -114,10 +136,10 @@ class UI(QMainWindow):
             self.loginLabel.setText(f'Logged in as {username}')
 
     def save_button_clicked(self):
-        if self.usernameInput.text() != '' and self.passwordInput.text() != '' and \
-                (self.skywardUsername != self.usernameInput.text() or
-                 self.skywardPasswordBin != self.passwordInput.text().encode()):
+        if self.usernameInput.text() and self.passwordInput.text():
             self.login()
+        else:
+            self.message_box('ReSkyward - Input Error', 'Please enter a username and password.')
 
     def login(self):
         print('saving')
@@ -165,11 +187,43 @@ class UI(QMainWindow):
         # print(data, type(data))
 
 
+def dark_title_bar(hwnd):
+    if not (dark_mode and sys.platform == 'win32' and (version_num := sys.getwindowsversion()).major == 10):
+        return
+    set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
+    if version_num.build >= 22000: # windows 11
+        color = ct.c_int(0x30261C) # GBR Hex
+        set_window_attribute(hwnd, 35, ct.byref(color), ct.sizeof(color))
+    else:
+        rendering_policy = 19 if version_num.build < 19041 else 20 # 19 before 20h1
+        value = ct.c_int(True)
+        set_window_attribute(hwnd, rendering_policy, ct.byref(value), ct.sizeof(value))
+
+
 if __name__ == "__main__":
     # initialize app
     app = QApplication(sys.argv)
     # set style and fonts
-    # app.setStyle('Fusion')
+    # dark mode pallette
+    if dark_mode := darkdetect.isDark():
+        app.setStyle('Fusion')
+        dark_palette = QtGui.QPalette()
+        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.Light, QtGui.QColor(39, 49, 58))
+        dark_palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(39, 49, 58))
+        dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
+        dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(39, 49, 58))
+        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
+        dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
+        dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
+        dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.blue)
+        dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(59, 77, 100))
+        dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
+        app.setPalette(dark_palette)
+    
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
     MainWindow = QtWidgets.QMainWindow()
     
