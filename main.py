@@ -43,7 +43,7 @@ class UI(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
         # set variables
         self.skywardUsername = ''
-        self.skywardPasswordBin = ''
+        self.skywardPassword = ''
         self._class_ids = {}
 
         # set minimum width
@@ -237,25 +237,35 @@ class UI(QMainWindow):
             self.message_box('ReSkyward - Input Error', 'Please enter a username and password.')
 
     def login(self):
+        """
+        Saves the username and password as encrypted binary
+        """
         print('saving')
         self.skywardUsername = self.usernameInput.text()
-        self.skywardPasswordBin = self.passwordInput.text()
-        # encrypt password
-        if not os.path.exists('aes.bin'):
+        self.skywardPassword = self.passwordInput.text()
+        # Create user folder if needed
+        if not os.path.exists('user'):
+            os.mkdir('user')
+        # Checks if key has already been generated
+        if not os.path.exists('user/aes.bin'):
+            # If key does not exist, generate and write to file a new 32-byte key
             key = get_random_bytes(32)
-            with open('aes.bin', 'wb') as file_out:
+            with open('user/aes.bin', 'wb') as file_out:
                 file_out.write(key)
         else:
-            with open('aes.bin', 'rb') as f:
+            with open('user/aes.bin', 'rb') as f:
                 key = f.read()
-        # print(key)
-        data = json.dumps([self.skywardUsername, self.skywardPasswordBin]).encode()
-        cipher = AES.new(key, AES.MODE_EAX)
-        # nonce = cipher.nonce
-        ciphertext, tag = cipher.encrypt_and_digest(data)
 
-        with open("encrypted.bin", "wb") as file_out:
+        # encodes a json-formatted list containing the username and password (user login)
+        data = json.dumps([self.skywardUsername, self.skywardPassword]).encode()
+        # create cipher
+        cipher = AES.new(key, AES.MODE_EAX)
+        # encrypt user login
+        ciphertext, tag = cipher.encrypt_and_digest(data)
+        # writes encrypted user login to file
+        with open("user/encrypted.bin", "wb") as file_out:
             [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
+        # refreshes database
         self.refresh_database()
         self.usernameInput.clear()
         self.passwordInput.clear()
@@ -264,17 +274,19 @@ class UI(QMainWindow):
         """
         Get password and decrypt
         """
-        # key = b'Sixteen byte key'
+        # reads key from file
         with open("aes.bin", "rb") as file_in:
             key = file_in.read()
-
+        # reads encrypted user info from file
         with open("encrypted.bin", "rb") as file_in:
             nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
-
+        # generate cypher from key
         cipher = AES.new(key, AES.MODE_EAX, nonce)
+        # decrypts user login
         data = cipher.decrypt_and_verify(ciphertext, tag).decode()
-        # run scraper
+        # set text for refresh label
         self.lastRefreshedLabel.setText('Refreshing...')
+        # run scraper as thread: inputs user login
         Thread(
             target=self.run_scraper,
             args=json.loads(data),
