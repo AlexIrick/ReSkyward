@@ -22,6 +22,19 @@ except:
     sys.path.append(os.path.dirname(__file__))
 
 
+class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
+    editFinished = QtCore.pyqtSignal(int)
+    index = None
+    
+    def __init__(self, parent: QtCore.QObject=None):
+        super().__init__(parent)
+        self.closeEditor.connect(lambda: self.editFinished.emit(self.index.row()))
+
+    def setEditorData(self, editor: QtWidgets.QWidget, index: QtCore.QModelIndex):
+        self.index = index
+        return super().setEditorData(editor, index)
+
+
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
@@ -31,6 +44,7 @@ class UI(QMainWindow):
         # set variables
         self.skywardUsername = ''
         self.skywardPasswordBin = ''
+        self._class_ids = {}
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
@@ -49,6 +63,10 @@ class UI(QMainWindow):
         self.database_refreshed.connect(self.load_skyward)
         self.error_msg_signal.connect(self.error_msg_signal_handler)
 
+        item_delegate = EditableListStyledItemDelegate(self.classesFilter)
+        item_delegate.editFinished.connect(self.edited_item)
+        self.classesFilter.setItemDelegate(item_delegate)
+
         # set dark title bar
         dark_title_bar(int(self.winId()))
         
@@ -58,6 +76,19 @@ class UI(QMainWindow):
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
+
+    def edited_item(self, index):
+        text = self.classesFilter.item(index).text()
+        self._class_ids[self.skyward_data[index-1]['class_info']['id']] = text
+        self.skywardTable.setVerticalHeaderItem(index-1, QtWidgets.QTableWidgetItem(text))
+        with open('data/CustomNames.json', 'w') as f:
+            json.dump(self._class_ids, f, indent=4)
+
+    def load_custom_classnames(self):
+        if not os.path.exists('data/CustomNames.json'):
+            return
+        with open('data/CustomNames.json') as f:
+            self._class_ids = json.load(f)
 
     def error_msg_signal_handler(self, msg):
         self.lastRefreshedLabel.setText(msg)
@@ -79,15 +110,16 @@ class UI(QMainWindow):
         with open('data/SkywardExport.json') as f:
             skyward_data = json.load(f) # read data
         self.headers = skyward_data[0][0]['headers'][1:]
-        self.skyward_data = chain.from_iterable([x[1:] for x in skyward_data])  # merge all classes together, skipping headers
+        self.skyward_data = list(chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
         return True
     
-    def load_skyward(self):
-        if not self.load_skyward_data():
+    def load_skyward(self, reload=True):
+        if reload and not self.load_skyward_data():
             return
         # load data to table
+        self.load_custom_classnames()
         self.skywardTable.clear()
         self.classesFilter.clear()
         self.classesFilter.addItem('All')
@@ -95,11 +127,17 @@ class UI(QMainWindow):
             # add text to table header
             self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
         for n, data in enumerate(self.skyward_data):
-            table_item = QtWidgets.QTableWidgetItem(data['class_info']['class'])
+            table_item = QtWidgets.QTableWidgetItem()
             item = QtWidgets.QListWidgetItem()
-            item.setText(data['class_info']['class'])
+            if data['class_info']['id'] in self._class_ids:
+                table_item.setText(self._class_ids[data['class_info']['id']])
+                item.setText(self._class_ids[data['class_info']['id']])
+            else:
+                table_item.setText(data['class_info']['class'])
+                item.setText(data['class_info']['class'])
             item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
             self.classesFilter.addItem(item)
+            # self.classesFilter.addItem(data['class_info']['class'])
             for m, data in enumerate(data['grades']):
                 self.skywardTable.setItem(n, m, self.create_table_item(data))
             self.skywardTable.setVerticalHeaderItem(n, table_item)
@@ -109,7 +147,7 @@ class UI(QMainWindow):
         table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
         if data.get('highlighted'):
             if dark_mode:
-                table_item.setBackground(QtGui.QColor(59, 77, 100))
+                table_item.setBackground(QtGui.QColor(52, 79, 113))
             else:
                 table_item.setBackground(QtGui.QColor(255, 255, 120))
         if data.get('tooltip'):
@@ -186,8 +224,6 @@ class UI(QMainWindow):
             args=json.loads(data),
             daemon=True
         ).start()
-
-        # print(data, type(data))
 
 
 def dark_title_bar(hwnd):
