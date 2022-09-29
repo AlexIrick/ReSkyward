@@ -47,8 +47,7 @@ class UI(QMainWindow):
         self.error_msg_signal.connect(self.error_msg_signal_handler)
 
         # set dark title bar
-        if dark_mode:
-            dark_title_bar(int(self.winId()))
+        dark_title_bar(int(self.winId()))
         
         self.show()
         self.load_skyward()
