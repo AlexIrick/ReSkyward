@@ -60,7 +60,9 @@ class UI(QMainWindow):
         self.saveButton.clicked.connect(self.save_button_clicked)
         self.refreshButton.clicked.connect(self.refresh_database)
 
+        # signal to refresh UI after updated database is loaded
         self.database_refreshed.connect(self.load_skyward)
+        # signal to display error message
         self.error_msg_signal.connect(self.error_msg_signal_handler)
 
         item_delegate = EditableListStyledItemDelegate(self.classesFilter)
@@ -78,6 +80,10 @@ class UI(QMainWindow):
     error_msg_signal = pyqtSignal(str)
 
     def edited_item(self, index):
+        """
+        Runs everytime a class name is edited.
+        Updates vertical header and saves to file
+        """
         text = self.classesFilter.item(index).text()
         self._class_ids[self.skyward_data[index-1]['class_info']['id']] = text
         self.skywardTable.setVerticalHeaderItem(index-1, QtWidgets.QTableWidgetItem(text))
@@ -85,76 +91,115 @@ class UI(QMainWindow):
             json.dump(self._class_ids, f, indent=4)
 
     def load_custom_classnames(self):
+        """
+        Loads custom class names from file to self._class_ids
+        """
         if not os.path.exists('data/CustomNames.json'):
             return
         with open('data/CustomNames.json') as f:
             self._class_ids = json.load(f)
 
     def error_msg_signal_handler(self, msg):
+        """
+        Handles signals from self.error_msg_signal
+        """
         self.lastRefreshedLabel.setText(msg)
         self.message_box('ReSkyward - Error', msg)
 
     def message_box(self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok):
+        """
+        Displays a message box with the given title, text, icon, and buttons
+        Needed to set the title bar color of the error message window
+        """
         msg_box = QtWidgets.QMessageBox(self)
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
         msg_box.setIcon(icon)
         msg_box.setStandardButtons(buttons)
-        dark_title_bar(int(msg_box.winId()))
-        return msg_box.exec_()
+        dark_title_bar(int(msg_box.winId()))  # set custom dark title bar color
+        return msg_box.exec_()  # returns the button clicked (ex: QtWidgets.QMessageBox.Ok)
 
     def load_skyward_data(self):
+        """
+        Loads the Skyward data from database
+        """
+        # Return error in status bar if no data already exists
         if not os.path.exists('data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
             return
+        # Load data from file
         with open('data/SkywardExport.json') as f:
             skyward_data = json.load(f) # read data
+        # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
         self.headers = skyward_data[0][0]['headers'][1:]
         self.skyward_data = list(chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
+        # Get the last updated date of the data
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
-        return True
+        return True  # return True if data was loaded successfully
     
     def load_skyward(self, reload=True):
+        """
+        Update the Skyward table UI with the data from the database
+        """
         if reload and not self.load_skyward_data():
-            return
+            return  # if reload was requested, and failed, return
         # load data to table
-        self.load_custom_classnames()
+        self.load_custom_classnames()  # load custom class names, set to self._class_ids
+        # clear data
         self.skywardTable.clear()
         self.classesFilter.clear()
+        # add "All" to classes filter
         self.classesFilter.addItem('All')
+        # set horizontal table headers (grading periods)
         for n, data in enumerate(self.headers):
             # add text to table header
             self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
+        
+        # set grades, class filter items, and vertical table headers (classes)
         for n, data in enumerate(self.skyward_data):
             table_item = QtWidgets.QTableWidgetItem()
             item = QtWidgets.QListWidgetItem()
             if data['class_info']['id'] in self._class_ids:
+                # if the class has a custom name saved, use it
                 table_item.setText(self._class_ids[data['class_info']['id']])
                 item.setText(self._class_ids[data['class_info']['id']])
             else:
+                # otherwise, use the class name from Skyward
                 table_item.setText(data['class_info']['class'])
                 item.setText(data['class_info']['class'])
+            # make item editable
             item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            # add item to table
             self.classesFilter.addItem(item)
-            # self.classesFilter.addItem(data['class_info']['class'])
+            # add grades to table
             for m, data in enumerate(data['grades']):
                 self.skywardTable.setItem(n, m, self.create_table_item(data))
+            # ser class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
         
     @staticmethod
     def create_table_item(data):
+        """
+        Returns a table item with the given data
+        """
         table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
         if data.get('highlighted'):
             if dark_mode:
+                # set dark mode highlight color
                 table_item.setBackground(QtGui.QColor(52, 79, 113))
             else:
+                # set light mode highlight color
                 table_item.setBackground(QtGui.QColor(255, 255, 120))
         if data.get('tooltip'):
+            # set tooltip
             table_item.setToolTip(data['tooltip'])
         return table_item
 
     def title_bar_button_clicked(self, button_index, checked):
+        """
+        Update stacked widget index when a title bar button is clicked
+        """
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
         if not checked:
             _buttons[button_index].setChecked(True)  # force the button to stay checked
@@ -164,6 +209,11 @@ class UI(QMainWindow):
         self.tabsStackedWidget.setCurrentIndex(button_index)
 
     def run_scraper(self, username, password):
+        """
+        (RUNS IN THREAD)
+        Run scraper and return any errors
+        Sends a signal to self.database_refreshed when the scraper is done
+        """
         try:
             skyward.GetSkywardPage(username, password)
         except skyward.SkywardLoginFailed:
@@ -177,6 +227,10 @@ class UI(QMainWindow):
             self.loginLabel.setText(f'Logged in as {username}')
 
     def save_button_clicked(self):
+        """
+        Called when the save button is clicked
+        Check if the username and password fields are empty
+        """
         if self.usernameInput.text() and self.passwordInput.text():
             self.login()
         else:
@@ -207,7 +261,9 @@ class UI(QMainWindow):
         self.passwordInput.clear()
 
     def refresh_database(self):
-        # get password and decrypt
+        """
+        Get password and decrypt
+        """
         # key = b'Sixteen byte key'
         with open("aes.bin", "rb") as file_in:
             key = file_in.read()
@@ -227,6 +283,11 @@ class UI(QMainWindow):
 
 
 def dark_title_bar(hwnd):
+    """
+    Set a custom color for the title bar
+    Windows 11: Sets color RGB (28, 38, 48)
+    Windows 10: Sets color to black
+    """
     if not (dark_mode and sys.platform == 'win32' and (version_num := sys.getwindowsversion()).major == 10):
         return
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
@@ -270,7 +331,9 @@ if __name__ == "__main__":
         dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
         app.setPalette(dark_palette)
     
+    # Apply custom fonts
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
+    # Create window
     MainWindow = QtWidgets.QMainWindow()
     
     window = UI()
