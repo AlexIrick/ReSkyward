@@ -14,6 +14,8 @@ import requests.exceptions
 import darkdetect
 import ctypes as ct
 
+version = 'v0.1.0 BETA'
+
 try:
     sys.path.append(sys._MEIPASS)
 except:
@@ -24,7 +26,8 @@ class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
         uic.loadUi("MainWindow.ui", self)
-
+        self.setWindowTitle(f'ReSkyward - {version}')
+        self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
         # set variables
         self.skywardUsername = ''
         self.skywardPasswordBin = ''
@@ -49,8 +52,9 @@ class UI(QMainWindow):
         # set dark title bar
         dark_title_bar(int(self.winId()))
         
-        self.show()
         self.load_skyward()
+        splash.hide()
+        self.show()
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
@@ -202,7 +206,14 @@ def dark_title_bar(hwnd):
 if __name__ == "__main__":
     # initialize app
     app = QApplication(sys.argv)
-    # set style and fonts
+    # disable DPI scaling
+    app.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
+    
+    # set splash screen
+    splash_icon = QtGui.QPixmap('img/logo-min.svg')
+    splash = QtWidgets.QSplashScreen(splash_icon, QtCore.Qt.WindowStaysOnTopHint)
+    splash.show()
+    
     # dark mode pallette
     if dark_mode := darkdetect.isDark():
         app.setStyle('Fusion')
@@ -225,9 +236,6 @@ if __name__ == "__main__":
     
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
     MainWindow = QtWidgets.QMainWindow()
-    
-    # disable DPI scaling
-    app.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
     
     window = UI()
     app.exec_()
