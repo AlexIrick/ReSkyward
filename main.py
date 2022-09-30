@@ -13,6 +13,7 @@ import skyward
 import requests.exceptions
 import darkdetect
 import ctypes as ct
+import shutil
 
 version = 'v0.1.0 BETA'
 
@@ -45,13 +46,14 @@ class UI(QMainWindow):
         self.skywardUsername = ''
         self.skywardPassword = ''
         self._class_ids = {}
+        self.rememberMe = True
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
         self.weeksFilter.setFixedWidth((self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count() + 2 * self.weeksFilter.frameWidth())
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
-        
+
         # set button connections
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
@@ -59,6 +61,7 @@ class UI(QMainWindow):
         self.settingsButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
         self.saveButton.clicked.connect(self.save_button_clicked)
         self.refreshButton.clicked.connect(self.refresh_database)
+        self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
         # signal to refresh UI after updated database is loaded
         self.database_refreshed.connect(self.load_skyward)
@@ -71,7 +74,7 @@ class UI(QMainWindow):
 
         # set dark title bar
         dark_title_bar(int(self.winId()))
-        
+        # self.login(False)
         self.load_skyward()
         splash.hide()
         self.show()
@@ -137,13 +140,16 @@ class UI(QMainWindow):
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
         return True  # return True if data was loaded successfully
-    
+
     def load_skyward(self, reload=True):
         """
         Update the Skyward table UI with the data from the database
         """
         if reload and not self.load_skyward_data():
             return  # if reload was requested, and failed, return
+        self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table
+        self.rememberMe = self.loginRememberCheck.isChecked()
+
         # load data to table
         self.load_custom_classnames()  # load custom class names, set to self._class_ids
         # clear data
@@ -155,7 +161,7 @@ class UI(QMainWindow):
         for n, data in enumerate(self.headers):
             # add text to table header
             self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
-        
+
         # set grades, class filter items, and vertical table headers (classes)
         for n, data in enumerate(self.skyward_data):
             table_item = QtWidgets.QTableWidgetItem()
@@ -177,7 +183,7 @@ class UI(QMainWindow):
                 self.skywardTable.setItem(n, m, self.create_table_item(data))
             # ser class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
-        
+
     @staticmethod
     def create_table_item(data):
         """
@@ -236,13 +242,14 @@ class UI(QMainWindow):
         else:
             self.message_box('ReSkyward - Input Error', 'Please enter a username and password.')
 
-    def login(self):
+    def login(self, should_refresh=True):
         """
         Saves the username and password as encrypted binary
         """
         print('saving')
         self.skywardUsername = self.usernameInput.text()
         self.skywardPassword = self.passwordInput.text()
+
         # Create user folder if needed
         if not os.path.exists('user'):
             os.mkdir('user')
@@ -256,17 +263,22 @@ class UI(QMainWindow):
             with open('user/aes.bin', 'rb') as f:
                 key = f.read()
 
-        # encodes a json-formatted list containing the username and password (user login)
-        data = json.dumps([self.skywardUsername, self.skywardPassword]).encode()
-        # create cipher
-        cipher = AES.new(key, AES.MODE_EAX)
-        # encrypt user login
-        ciphertext, tag = cipher.encrypt_and_digest(data)
-        # writes encrypted user login to file
-        with open("user/encrypted.bin", "wb") as file_out:
-            [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
+        if self.rememberMe:
+            # encodes a json-formatted list containing the username and password (user login)
+            data = json.dumps([self.skywardUsername, self.skywardPassword]).encode()
+            # create cipher
+            cipher = AES.new(key, AES.MODE_EAX)
+            # encrypt user login
+            ciphertext, tag = cipher.encrypt_and_digest(data)
+            # writes encrypted user login to file
+            with open("user/encrypted.bin", "wb") as file_out:
+                [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
+        else:
+            # clears user info file
+            open("user/encrypted.bin", "wb").close()
         # refreshes database
-        self.refresh_database()
+        if should_refresh:
+            self.refresh_database()
         self.usernameInput.clear()
         self.passwordInput.clear()
 
@@ -274,24 +286,44 @@ class UI(QMainWindow):
         """
         Get password and decrypt
         """
-        # reads key from file
-        with open("aes.bin", "rb") as file_in:
-            key = file_in.read()
-        # reads encrypted user info from file
-        with open("encrypted.bin", "rb") as file_in:
-            nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
-        # generate cypher from key
-        cipher = AES.new(key, AES.MODE_EAX, nonce)
-        # decrypts user login
-        data = cipher.decrypt_and_verify(ciphertext, tag).decode()
-        # set text for refresh label
-        self.lastRefreshedLabel.setText('Refreshing...')
-        # run scraper as thread: inputs user login
-        Thread(
-            target=self.run_scraper,
-            args=json.loads(data),
-            daemon=True
-        ).start()
+        if self.loginRememberCheck.isChecked():
+            # reads key from file
+            with open("user/aes.bin", "rb") as file_in:
+                key = file_in.read()
+            # reads encrypted user info from file
+            with open("user/encrypted.bin", "rb") as file_in:
+                nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+            # generate cypher from key
+            cipher = AES.new(key, AES.MODE_EAX, nonce)
+            # decrypts user login
+            data = cipher.decrypt_and_verify(ciphertext, tag).decode()
+            # set text for refresh label
+            self.lastRefreshedLabel.setText('Refreshing...')
+            # run scraper as thread: inputs user login
+            Thread(
+                target=self.run_scraper,
+                args=json.loads(data),
+                daemon=True
+            ).start()
+        else:
+            # set text for refresh label
+            self.lastRefreshedLabel.setText('Refreshing...')
+            # run scraper as thread: inputs user login
+            Thread(
+                target=self.run_scraper,
+                args=[self.skywardUsername, self.skywardPassword],
+                daemon=True
+            ).start()
+
+    def clear_all_user_data(self):
+        # log out
+        # open("user/aes.bin", "wb").close()
+        # open("user/encrypted.bin", "wb").close()
+        delete_folder('data')
+        delete_folder('user')
+        self.loginLabel.setText('Not Logged In')
+        self.skywardViewStackedWidget.setCurrentIndex(0)  # set to skyward table
+        # self.skywardTable.clear()
 
 
 def dark_title_bar(hwnd):
@@ -310,6 +342,12 @@ def dark_title_bar(hwnd):
         rendering_policy = 19 if version_num.build < 19041 else 20 # 19 before 20h1
         value = ct.c_int(True)
         set_window_attribute(hwnd, rendering_policy, ct.byref(value), ct.sizeof(value))
+
+
+def delete_folder(folder_name):
+    if os.path.exists(folder_name):
+        shutil.rmtree(folder_name)
+
 
 
 if __name__ == "__main__":
@@ -350,3 +388,8 @@ if __name__ == "__main__":
     
     window = UI()
     app.exec_()
+
+    # runs after program is closed
+    # deletes user data if remember me was not toggled on login
+    if not window.rememberMe:
+        delete_folder('data')
