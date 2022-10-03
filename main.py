@@ -1,5 +1,5 @@
 from Crypto.Random import get_random_bytes
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5 import uic
@@ -39,6 +39,8 @@ class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
+        self.assignment_files = None
+        self.skyward_data = None
         uic.loadUi("MainWindow.ui", self)
         self.setWindowTitle(f'ReSkyward - {version}')
         self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
@@ -54,6 +56,9 @@ class UI(QMainWindow):
             (self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count() + 2 * self.weeksFilter.frameWidth())
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
+        # set class tree view column sizes
+        self.classViewTree.header().resizeSection(0, 300)
+        self.classViewTree.header().resizeSection(1, 90)
 
         # set button connections; x = is checked when button is checkable
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
@@ -65,8 +70,8 @@ class UI(QMainWindow):
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
         # list connections; x = item clicked
-        self.classesFilter.itemClicked.connect(lambda x: self.filter_selected('class', x))
-        self.weeksFilter.itemClicked.connect(lambda x: self.filter_selected('weeks', x))
+        self.classesFilter.itemClicked.connect(self.filter_selected)
+        self.weeksFilter.itemClicked.connect(self.filter_selected)
 
         # signal to refresh UI after updated database is loaded
         self.database_refreshed.connect(self.load_skyward)
@@ -102,12 +107,52 @@ class UI(QMainWindow):
         with open('data/CustomNames.json', 'w') as f:
             json.dump(self._class_ids, f, indent=4)
 
-    def filter_selected(self, filter_type, item):
-        if (filter_type == 'class' and self.classesFilter.indexFromItem(item).row() != 0) or \
-                (filter_type == 'weeks' and self.weeksFilter.indexFromItem(item).row() != 0):
-            self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
-        elif self.classesFilter.indexFromItem(self.classesFilter.currentItem()).row() == 0 and self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row() == 0:
+    def filter_selected(self):
+        # get indexes of selected filter item
+        classes_item_index = self.classesFilter.indexFromItem(self.classesFilter.currentItem()).row()
+        weeks_item_index = self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row()
+        # If they are both set to all then change to table view
+        if classes_item_index == 0:
             self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table view
+        else:
+            self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
+            # open assignment files for corresponding classes
+            with open(self.assignment_files[classes_item_index-1]) as f:
+                class_assignments = json.load(f)
+            # load the tree view
+            self.load_class_view(class_assignments, self.weeksFilter.currentItem().text())
+
+    def load_class_view(self, assignments, week_filter):
+        # clear tree view (does not clear headers)
+        self.classViewTree.clear()
+        for assignment in assignments:
+            # only add assignment if in the correct 6-weeks
+            if 'due' in assignment and week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']:
+                # hide weeks column if not in all-weeks filter
+                if week_filter.lower() != 'all':
+                    self.classViewTree.header().hideSection(3)
+                else:
+                    self.classViewTree.header().showSection(3)
+
+                # get assignment data; only if it exists
+                item = QTreeWidgetItem()
+                if 'name' in assignment:
+                    # set assignment name
+                    name = assignment['name']
+                    item.setText(0, name)
+                if 'row' in assignment and 'grade' in assignment['row']:
+                    # set grade
+                    grade = assignment['row']['grade']
+                    item.setText(1, grade)
+                if 'due' in assignment:
+                    # set due date
+                    due_date = assignment['due'][0]
+                    item.setText(2, due_date)
+                    # set 6 weeks
+                    week = assignment['due'][1].strip('()').lower()
+                    item.setText(3, week)
+                # add assignment to tree
+                self.classViewTree.addTopLevelItem(item)
 
     def load_custom_classnames(self):
         """
@@ -153,6 +198,7 @@ class UI(QMainWindow):
         self.headers = skyward_data[0][0]['headers'][1:]
         self.skyward_data = list(
             chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
+        self.assignment_files = [x['assignments'] for x in self.skyward_data]
         # Get the last updated date of the data
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
@@ -178,7 +224,7 @@ class UI(QMainWindow):
         self.classesFilter.clear()
         # add "All" to classes filter
         self.classesFilter.addItem('All')
-
+        self.classesFilter.setCurrentRow(0)
         # set horizontal table headers (grading periods)
         for n, data in enumerate(self.headers):
             # add text to table header
