@@ -144,6 +144,8 @@ class UI(QMainWindow):
                     # set grade
                     grade = assignment['row']['grade']
                     item.setText(1, grade)
+                else:
+                    item.setText(1, '---')
                 if 'due' in assignment:
                     # set due date
                     due_date = assignment['due'][0]
