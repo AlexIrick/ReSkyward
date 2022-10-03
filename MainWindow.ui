@@ -203,7 +203,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -244,6 +244,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <widget class="QListWidget" name="classesFilter">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -281,65 +284,11 @@
                <bool>false</bool>
               </property>
               <property name="currentRow">
-               <number>0</number>
+               <number>-1</number>
               </property>
               <item>
                <property name="text">
                 <string>All</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>English</string>
-               </property>
-               <property name="font">
-                <font>
-                 <weight>50</weight>
-                 <bold>false</bold>
-                </font>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Environmental Science</string>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Pre Calc</string>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>US History</string>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Game Design</string>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Computer Science</string>
-               </property>
-               <property name="flags">
-                <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
                </property>
               </item>
              </widget>

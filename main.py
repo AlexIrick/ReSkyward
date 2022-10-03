@@ -72,6 +72,10 @@ class UI(QMainWindow):
         item_delegate.editFinished.connect(self.edited_item)
         self.classesFilter.setItemDelegate(item_delegate)
 
+        # hide filters
+        self.classesFilter.hide()
+        self.weeksFilter.hide()
+
         # set dark title bar
         dark_title_bar(int(self.winId()))
         # self.login(False)
@@ -148,6 +152,10 @@ class UI(QMainWindow):
         if reload and not self.load_skyward_data():
             return  # if reload was requested, and failed, return
         self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table
+        # show filters
+        self.classesFilter.show()
+        self.weeksFilter.show()
+
         self.rememberMe = self.loginRememberCheck.isChecked()
 
         # load data to table
@@ -157,6 +165,7 @@ class UI(QMainWindow):
         self.classesFilter.clear()
         # add "All" to classes filter
         self.classesFilter.addItem('All')
+
         # set horizontal table headers (grading periods)
         for n, data in enumerate(self.headers):
             # add text to table header
@@ -322,7 +331,9 @@ class UI(QMainWindow):
         delete_folder('data')
         delete_folder('user')
         self.loginLabel.setText('Not Logged In')
-        self.skywardViewStackedWidget.setCurrentIndex(0)  # set to skyward table
+        self.skywardViewStackedWidget.setCurrentIndex(0)  # set to not logged in page
+        self.classesFilter.hide()
+        self.weeksFilter.hide()
         # self.skywardTable.clear()
 
 
