@@ -26,8 +26,8 @@ except:
 class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
     editFinished = QtCore.pyqtSignal(int)
     index = None
-    
-    def __init__(self, parent: QtCore.QObject=None):
+
+    def __init__(self, parent: QtCore.QObject = None):
         super().__init__(parent)
         self.closeEditor.connect(lambda: self.editFinished.emit(self.index.row()))
 
@@ -50,11 +50,12 @@ class UI(QMainWindow):
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
-        self.weeksFilter.setFixedWidth((self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count() + 2 * self.weeksFilter.frameWidth())
+        self.weeksFilter.setFixedWidth(
+            (self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count() + 2 * self.weeksFilter.frameWidth())
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
 
-        # set button connections
+        # set button connections; x = is checked when button is checkable
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
@@ -62,6 +63,10 @@ class UI(QMainWindow):
         self.saveButton.clicked.connect(self.save_button_clicked)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
+
+        # list connections; x = item clicked
+        self.classesFilter.itemClicked.connect(lambda x: self.filter_selected('class', x))
+        self.weeksFilter.itemClicked.connect(lambda x: self.filter_selected('weeks', x))
 
         # signal to refresh UI after updated database is loaded
         self.database_refreshed.connect(self.load_skyward)
@@ -92,10 +97,17 @@ class UI(QMainWindow):
         Updates vertical header and saves to file
         """
         text = self.classesFilter.item(index).text()
-        self._class_ids[self.skyward_data[index-1]['class_info']['id']] = text
-        self.skywardTable.setVerticalHeaderItem(index-1, QtWidgets.QTableWidgetItem(text))
+        self._class_ids[self.skyward_data[index - 1]['class_info']['id']] = text
+        self.skywardTable.setVerticalHeaderItem(index - 1, QtWidgets.QTableWidgetItem(text))
         with open('data/CustomNames.json', 'w') as f:
             json.dump(self._class_ids, f, indent=4)
+
+    def filter_selected(self, filter_type, item):
+        if (filter_type == 'class' and self.classesFilter.indexFromItem(item).row() != 0) or \
+                (filter_type == 'weeks' and self.weeksFilter.indexFromItem(item).row() != 0):
+            self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
+        elif self.classesFilter.indexFromItem(self.classesFilter.currentItem()).row() == 0 and self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row() == 0:
+            self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table view
 
     def load_custom_classnames(self):
         """
@@ -136,10 +148,11 @@ class UI(QMainWindow):
             return
         # Load data from file
         with open('data/SkywardExport.json') as f:
-            skyward_data = json.load(f) # read data
+            skyward_data = json.load(f)  # read data
         # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
         self.headers = skyward_data[0][0]['headers'][1:]
-        self.skyward_data = list(chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
+        self.skyward_data = list(
+            chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
         # Get the last updated date of the data
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
@@ -346,11 +359,11 @@ def dark_title_bar(hwnd):
     if not (dark_mode and sys.platform == 'win32' and (version_num := sys.getwindowsversion()).major == 10):
         return
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
-    if version_num.build >= 22000: # windows 11
-        color = ct.c_int(0x30261C) # GBR Hex
+    if version_num.build >= 22000:  # windows 11
+        color = ct.c_int(0x30261C)  # GBR Hex
         set_window_attribute(hwnd, 35, ct.byref(color), ct.sizeof(color))
     else:
-        rendering_policy = 19 if version_num.build < 19041 else 20 # 19 before 20h1
+        rendering_policy = 19 if version_num.build < 19041 else 20  # 19 before 20h1
         value = ct.c_int(True)
         set_window_attribute(hwnd, rendering_policy, ct.byref(value), ct.sizeof(value))
 
@@ -360,43 +373,42 @@ def delete_folder(folder_name):
         shutil.rmtree(folder_name)
 
 
-
 if __name__ == "__main__":
     # initialize app
     app = QApplication(sys.argv)
     # disable DPI scaling
     app.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
-    
+
     # set splash screen
     splash_icon = QtGui.QPixmap('img/logo-min.svg')
     splash = QtWidgets.QSplashScreen(splash_icon, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
-    
+
     # dark mode pallette
     if dark_mode := darkdetect.isDark():
         app.setStyle('Fusion')
         dark_palette = QtGui.QPalette()
-        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
         dark_palette.setColor(QtGui.QPalette.Light, QtGui.QColor(39, 49, 58))
         dark_palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(39, 49, 58))
         dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 35, 45))
         dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25,35,45))
+        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25, 35, 45))
         dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.blue)
         dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(59, 77, 100))
         dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
         app.setPalette(dark_palette)
-    
+
     # Apply custom fonts
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
     # Create window
     MainWindow = QtWidgets.QMainWindow()
-    
+
     window = UI()
     app.exec_()
 
