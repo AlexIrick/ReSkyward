@@ -1,3 +1,5 @@
+import re
+
 from Crypto.Random import get_random_bytes
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -40,6 +42,7 @@ class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
+        self.class_assignments = []
         self.assignment_files = None
         self.skyward_data = None
         uic.loadUi("MainWindow.ui", self)
@@ -50,6 +53,7 @@ class UI(QMainWindow):
         self.skywardPassword = ''
         self._class_ids = {}
         self.rememberMe = True
+        self.citizenColumns = [1, 4, 7]
         # create config
         # self.config = QSettingsManager(default_settings)
         self.settings = {
@@ -119,21 +123,41 @@ class UI(QMainWindow):
             json.dump(self._class_ids, f, indent=4)
 
     def filter_selected(self):
+        """
+        Runs whenever a filter is clicked
+        Changes skyward views
+        """
         # get indexes of selected filter item
         classes_item_index = self.classesFilter.indexFromItem(self.classesFilter.currentItem()).row()
-        weeks_item_index = self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row()
         # If they are both set to all then change to table view
         if classes_item_index == 0:
             self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table view
         else:
             self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
-            # open assignment files for corresponding classes
-            with open(self.assignment_files[classes_item_index-1]) as f:
-                class_assignments = json.load(f)
             # load the tree view
-            self.load_class_view(class_assignments, self.weeksFilter.currentItem().text())
+            self.load_class_view(self.class_assignments[classes_item_index-1], self.weeksFilter.currentItem().text())
+        # hide skyward table columns according to filters
+        self.hide_skyward_table_columns()
+
+    def hide_skyward_table_columns(self):
+        """
+        Hides/shows skyward table columns depending on filters and settings
+        """
+        # get weeks filter index
+        weeks_item_index = self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row()
+        for n, h in enumerate(self.headers):
+            if weeks_item_index != 0:
+                self.skywardTable.setColumnHidden(n, str(weeks_item_index) not in h['text']
+                                                  or (self.hideCitizen and (n in self.citizenColumns)))
+            else:
+                self.skywardTable.setColumnHidden(n, self.hideCitizen and (n in self.citizenColumns))
 
     def load_class_view(self, assignments, week_filter):
+        """
+        Loads the class view for a class
+        :param assignments: List of assignments in the selected class
+        :param week_filter: Current selected 6-weeks filter (text)
+        """
         # clear tree view (does not clear headers)
         self.classViewTree.clear()
         for assignment in assignments:
@@ -157,13 +181,14 @@ class UI(QMainWindow):
                     item.setText(1, grade)
                 else:
                     item.setText(1, '---')
-                if 'due' in assignment:
-                    # set due date
-                    due_date = assignment['due'][0]
-                    item.setText(2, due_date)
-                    # set 6 weeks
-                    week = assignment['due'][1].strip('()').lower()
-                    item.setText(3, week)
+
+                # set due date
+                due_date = assignment['due'][0]
+                item.setText(2, due_date)
+                # set 6 weeks
+                week = assignment['due'][1].strip('()').lower()
+                item.setText(3, week)
+
                 # add assignment to tree
                 self.classViewTree.addTopLevelItem(item)
 
@@ -211,7 +236,12 @@ class UI(QMainWindow):
         self.headers = skyward_data[0][0]['headers'][1:]
         self.skyward_data = list(
             chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
+        # Get assignment files directories
         self.assignment_files = [x['assignments'] for x in self.skyward_data]
+        # Get assignments
+        for file_dir in self.assignment_files:
+            with open(file_dir) as f:
+                self.class_assignments.append(json.load(f))
         # Get the last updated date of the data
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
@@ -350,10 +380,7 @@ class UI(QMainWindow):
         """
         Loads items/objects related to settings
         """
-
-        self.skywardTable.setColumnHidden(1, self.hideCitizen)
-        self.skywardTable.setColumnHidden(4, self.hideCitizen)
-        self.skywardTable.setColumnHidden(7, self.hideCitizen)
+        self.hide_skyward_table_columns()
 
     def login(self, should_refresh=True):
         """
