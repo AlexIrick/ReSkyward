@@ -8,3 +8,4 @@ __pycache__
 .idea
 encrypted.bin
 aes.bin
+config.json

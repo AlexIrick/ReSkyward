@@ -14,6 +14,7 @@ import requests.exceptions
 import darkdetect
 import ctypes as ct
 import shutil
+from pyqtconfig import QSettingsManager, ConfigManager
 
 version = 'v0.1.0 BETA'
 
@@ -49,6 +50,14 @@ class UI(QMainWindow):
         self.skywardPassword = ''
         self._class_ids = {}
         self.rememberMe = True
+        # create config
+        # self.config = QSettingsManager(default_settings)
+        self.settings = {
+            "skyward": {
+                "hideCitizen": self.hideCitizenCheck.isChecked(),
+            }
+        }
+        self.hideCitizen = False
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
@@ -65,7 +74,7 @@ class UI(QMainWindow):
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
         self.settingsButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
-        self.saveButton.clicked.connect(self.save_button_clicked)
+        self.saveButton.clicked.connect(self.save_settings)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
@@ -90,6 +99,8 @@ class UI(QMainWindow):
         dark_title_bar(int(self.winId()))
         # self.login(False)
         self.load_skyward()
+        # self.save_settings()
+        self.load_config()
         splash.hide()
         self.show()
 
@@ -254,6 +265,7 @@ class UI(QMainWindow):
             # ser class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
 
+
     @staticmethod
     def create_table_item(data):
         """
@@ -302,15 +314,46 @@ class UI(QMainWindow):
             self.database_refreshed.emit()
             self.loginLabel.setText(f'Logged in as {username}')
 
-    def save_button_clicked(self):
+    def save_settings(self):
         """
         Called when the save button is clicked
         Check if the username and password fields are empty
         """
+        # Create user folder if needed
+        if not os.path.exists('user'):
+            os.mkdir('user')
         if self.usernameInput.text() and self.passwordInput.text():
             self.login()
-        else:
-            self.message_box('ReSkyward - Input Error', 'Please enter a username and password.')
+        elif self.usernameInput.text() or self.passwordInput.text():
+            self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
+
+        # save to config
+        self.hideCitizen = self.hideCitizenCheck.isChecked()
+        self.settings["skyward"]["hideCitizen"] = self.hideCitizen
+        with open('user/config.json', 'w') as f:
+            json.dump(self.settings, f, indent=4)
+        # load objects
+        self.load_config_objects()
+
+    def load_config(self):
+        """
+        Loads saved settings/config
+        """
+        if os.path.exists('user/config.json'):
+            with open('user/config.json', 'r') as f:
+                self.settings = json.load(f)
+            self.hideCitizen = self.settings["skyward"]["hideCitizen"]
+            self.hideCitizenCheck.setChecked(self.hideCitizen)
+            self.load_config_objects()
+
+    def load_config_objects(self):
+        """
+        Loads items/objects related to settings
+        """
+
+        self.skywardTable.setColumnHidden(1, self.hideCitizen)
+        self.skywardTable.setColumnHidden(4, self.hideCitizen)
+        self.skywardTable.setColumnHidden(7, self.hideCitizen)
 
     def login(self, should_refresh=True):
         """
@@ -320,9 +363,6 @@ class UI(QMainWindow):
         self.skywardUsername = self.usernameInput.text()
         self.skywardPassword = self.passwordInput.text()
 
-        # Create user folder if needed
-        if not os.path.exists('user'):
-            os.mkdir('user')
         # Checks if key has already been generated
         if not os.path.exists('user/aes.bin'):
             # If key does not exist, generate and write to file a new 32-byte key
@@ -454,6 +494,11 @@ if __name__ == "__main__":
 
     # Apply custom fonts
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
+
+    default_settings = {
+        "hideCitizen": True,
+    }
+
     # Create window
     MainWindow = QtWidgets.QMainWindow()
 
