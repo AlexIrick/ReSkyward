@@ -1,3 +1,4 @@
+import math
 import re
 
 from Crypto.Random import get_random_bytes
@@ -39,6 +40,20 @@ class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
         return super().setEditorData(editor, index)
 
 
+class EditableTreeStyledItemDelegate(QtWidgets.QStyledItemDelegate):
+    editFinished = QtCore.pyqtSignal(str, int)
+    index = None
+    text = None
+    def __init__(self, parent: QtCore.QObject = None):
+        super().__init__(parent)
+        self.closeEditor.connect(lambda: self.editFinished.emit(self.text, 0))
+
+    def setEditorData(self, editor: QtWidgets.QWidget, index: QtCore.QModelIndex):
+        self.index = index
+        self.text = editor.text()
+        return super().setEditorData(editor, index)
+
+
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
@@ -54,6 +69,9 @@ class UI(QMainWindow):
         self._class_ids = {}
         self.rememberMe = True
         self.citizenColumns = [1, 4, 7]
+        self.experimentItems = []
+        self.classViewItems = []
+
         # create config
         # self.config = QSettingsManager(default_settings)
         self.settings = {
@@ -70,8 +88,9 @@ class UI(QMainWindow):
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
         # set class tree view column sizes
-        self.classViewTree.header().resizeSection(0, 300)
+        self.classViewTree.header().resizeSection(0, 290)
         self.classViewTree.header().resizeSection(1, 90)
+        self.classViewTree.header().resizeSection(3, 90)
 
         # set button connections; x = is checked when button is checkable
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
@@ -81,6 +100,8 @@ class UI(QMainWindow):
         self.saveButton.clicked.connect(self.save_settings)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
+
+        self.experimentButton.clicked.connect(self.experiment_toggle)
 
         # list connections; x = item clicked
         self.classesFilter.itemClicked.connect(self.filter_selected)
@@ -95,9 +116,18 @@ class UI(QMainWindow):
         item_delegate.editFinished.connect(self.edited_item)
         self.classesFilter.setItemDelegate(item_delegate)
 
+        item_delegate = EditableTreeStyledItemDelegate(self.classViewTree)
+        item_delegate.editFinished.connect(lambda item, col: self.class_tree_edited(item, col))
+        self.classViewTree.setItemDelegate(item_delegate)
+
+        # tree connections
+        # self.classViewTree.itemChanged.connect(lambda item, col: self.class_tree_edited(item, col))
+
         # hide filters
         self.classesFilter.hide()
         self.weeksFilter.hide()
+        # hide experiment
+        self.experimentGroup.hide()
 
         # set dark title bar
         dark_title_bar(int(self.winId()))
@@ -110,6 +140,104 @@ class UI(QMainWindow):
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
+
+    def experiment_toggle(self):
+        if self.experimentGroup.isHidden():
+            # Enable experiment
+            self.experimentGroup.show()
+            self.experimentButton.setText('>')
+            self.classViewTree.header().hideSection(2)
+            # generate experiment
+            if len(self.experimentItems) == 0:
+                periods = ['1st', '2nd', '3rd', 'Sem1', '4th', '5th', '6th', 'Sem2', 'Avg']
+                for period in periods:
+                    item = QTreeWidgetItem()
+                    item.setText(0, period)
+                    self.experimentItems.append(item)
+                    self.experimentTree.addTopLevelItem(item)
+
+            self.display_experiment_grades()
+        else:
+            # Disable experiment
+            self.experimentGroup.hide()
+            self.experimentButton.setText('<')
+            self.classViewTree.header().showSection(2)
+            # for item in self.classViewItems:
+            #     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+            classes_item_index = self.get_selected_filter_index(self.classesFilter)
+            self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text())
+            # self.experimentTree.clear()
+
+    def experiment_calculate_grades(self):
+        max_decimal_places = 2
+        all_class_grades = {'1st': {}, '2nd': {}, '3rd': {}, '4th': {}, '5th': {}, '6th': {}}
+        # Formatted as:  {6-week: {Weight: [100, 100, 75], Weight2: [100, 99]}}
+
+        # six_weeks_grades = []
+        # for assignment in self.get_current_assignments():
+        #     six_week = assignment['due'][1].strip('()').lower()
+        #     if 'row' in assignment and 'grade' in assignment['row'] and 'due' in assignment:
+        #         weight = 1  # add grade weights later
+        #         if assignment['row']['grade'].isnumeric() or assignment['row']['grade'] == 'P':
+        #             grade = 100
+        #             if assignment['row']['grade'].isnumeric():
+        #                 grade = float(assignment['row']['grade'])
+        #             if weight in all_class_grades[six_week]:
+        #                 all_class_grades[six_week][weight].append(grade)
+        #             else:
+        #                 all_class_grades[six_week][weight] = [grade]
+        for item in self.classViewItems:
+            six_week = item.text(3)
+            weight = 1
+            grade = item.text(1)
+            # If grade is set to P (passing) then set to 100
+            if grade == 'P':
+                grade = '100'
+            # Make sure grade is numeric
+            if grade.isnumeric():
+                grade = float(grade)
+                if weight in all_class_grades[six_week]:
+                    all_class_grades[six_week][weight].append(grade)
+                else:
+                    all_class_grades[six_week][weight] = [grade]
+
+        # six weeks
+        class_grade = []
+        for six_week, value in all_class_grades.items():
+            # Calculate six week averages
+            six_week_grade = 0
+            for weight in value.keys():
+                total = sum(all_class_grades[six_week][weight])
+                six_week_grade += total/len(all_class_grades[six_week][weight])*weight
+            class_grade.append(format_round(six_week_grade, max_decimal_places))
+            # Calculate semester averages
+            if len(class_grade) == 3:
+                sem1_grade = sum(class_grade[:2]) / 3
+                class_grade.append(format_round(sem1_grade, max_decimal_places))
+            elif len(class_grade) == 7:
+                sem2_grade = sum(class_grade[4:7]) / 3
+                class_grade.append(format_round(sem2_grade, max_decimal_places))
+            # Calculate final
+        return class_grade
+
+    def class_tree_edited(self, item, col):
+        print(item, col)
+        self.display_experiment_grades()
+
+    def display_experiment_grades(self):
+        grades = self.experiment_calculate_grades()
+        for i, grade in enumerate(grades):
+            self.experimentItems[i].setText(1, str(grade))
+        # make items editable
+        for item in self.classViewItems:
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+
+    def get_selected_filter_index(self, list_widget):
+        return list_widget.indexFromItem(list_widget.currentItem()).row()
+
+    def get_current_assignments(self):
+        classes_item_index = self.get_selected_filter_index(self.classesFilter)
+        return self.class_assignments[classes_item_index - 1]
 
     def edited_item(self, index):
         """
@@ -128,7 +256,7 @@ class UI(QMainWindow):
         Changes skyward views
         """
         # get indexes of selected filter item
-        classes_item_index = self.classesFilter.indexFromItem(self.classesFilter.currentItem()).row()
+        classes_item_index = self.get_selected_filter_index(self.classesFilter)
         # If they are both set to all then change to table view
         if classes_item_index == 0:
             self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table view
@@ -138,13 +266,16 @@ class UI(QMainWindow):
             self.load_class_view(self.class_assignments[classes_item_index-1], self.weeksFilter.currentItem().text())
         # hide skyward table columns according to filters
         self.hide_skyward_table_columns()
+        # Calculate and display experiment grades if its not hidden
+        if not self.experimentGroup.isHidden():
+            self.display_experiment_grades()
 
     def hide_skyward_table_columns(self):
         """
         Hides/shows skyward table columns depending on filters and settings
         """
         # get weeks filter index
-        weeks_item_index = self.weeksFilter.indexFromItem(self.weeksFilter.currentItem()).row()
+        weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
         for n, h in enumerate(self.headers):
             if weeks_item_index != 0:
                 self.skywardTable.setColumnHidden(n, str(weeks_item_index) not in h['text']
@@ -160,6 +291,7 @@ class UI(QMainWindow):
         """
         # clear tree view (does not clear headers)
         self.classViewTree.clear()
+        self.classViewItems = []
         for assignment in assignments:
             # only add assignment if in the correct 6-weeks
             if 'due' in assignment and week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']:
@@ -189,6 +321,7 @@ class UI(QMainWindow):
                 week = assignment['due'][1].strip('()').lower()
                 item.setText(3, week)
 
+                self.classViewItems.append(item)
                 # add assignment to tree
                 self.classViewTree.addTopLevelItem(item)
 
@@ -486,6 +619,10 @@ def dark_title_bar(hwnd):
 def delete_folder(folder_name):
     if os.path.exists(folder_name):
         shutil.rmtree(folder_name)
+
+
+def format_round(number, decimal_places):
+    return float('{0:.{1}f}'.format(number, decimal_places))
 
 
 if __name__ == "__main__":
