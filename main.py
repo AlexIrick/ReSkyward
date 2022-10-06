@@ -1,6 +1,3 @@
-import math
-import re
-
 from Crypto.Random import get_random_bytes
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -17,7 +14,6 @@ import requests.exceptions
 import darkdetect
 import ctypes as ct
 import shutil
-from pyqtconfig import QSettingsManager, ConfigManager
 
 version = 'v0.1.0 BETA'
 
@@ -59,7 +55,6 @@ class UI(QMainWindow):
         self.classViewItems = []
 
         # create config
-        # self.config = QSettingsManager(default_settings)
         self.settings = {
             "skyward": {
                 "hideCitizen": self.hideCitizenCheck.isChecked(),
@@ -88,6 +83,8 @@ class UI(QMainWindow):
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
         self.experimentButton.clicked.connect(self.experiment_toggle)
+        self.experimentAddButton.clicked.connect(self.experiment_add)
+        self.experimentRemoveButton.clicked.connect(self.experiment_remove)
 
         # list connections; x = item clicked
         self.classesFilter.itemClicked.connect(lambda: self.filter_selected('class'))
@@ -113,6 +110,8 @@ class UI(QMainWindow):
         self.experimentGroup.hide()
 
         # set dark title bar
+        self.loginLabel.setText(f'Logged in as {get_user_info()[0]}')
+
         dark_title_bar(int(self.winId()))
         self.load_skyward()
         self.load_config()
@@ -123,6 +122,9 @@ class UI(QMainWindow):
     error_msg_signal = pyqtSignal(str)
 
     def experiment_toggle(self):
+        """
+        Toggles experiment mode
+        """
         if self.experimentGroup.isHidden():
             # Enable experiment
             self.experimentGroup.show()
@@ -149,24 +151,28 @@ class UI(QMainWindow):
             self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text(), True)
 
     def experiment_calculate_grades(self):
+        """
+        Calculates the six weeks and semester averages
+        """
         max_decimal_places = 2
         all_class_grades = {'1st': {}, '2nd': {}, '3rd': {}, '4th': {}, '5th': {}, '6th': {}}
         # Formatted as:  {6-week: {Weight: [100, 100, 75], Weight2: [100, 99]}}
         for item in self.classViewItems:
-            six_week = item.text(3)
-            weight = 1
-            grade = item.text(1)
-            # If grade is set to P (passing) then set to 100
-            if grade == 'P':
-                grade = '100'
-            # Make sure grade is numeric
-            if grade.isnumeric():
-                grade = float(grade)
-                if weight in all_class_grades[six_week]:
-                    all_class_grades[six_week][weight].append(grade)
-                else:
-                    all_class_grades[six_week][weight] = [grade]
-
+            if item.text(3) in all_class_grades:
+                six_week = item.text(3)
+                weight = 1
+                grade = item.text(1)
+                # If grade is set to P (passing) then set to 100
+                if grade == 'P':
+                    grade = '100'
+                # Make sure grade is numeric
+                if grade.isnumeric():
+                    grade = float(grade)
+                    if weight in all_class_grades[six_week]:
+                        all_class_grades[six_week][weight].append(grade)
+                    else:
+                        all_class_grades[six_week][weight] = [grade]
+                        
         # Six weeks
         class_grade = []
         for six_week, value in all_class_grades.items():
@@ -178,13 +184,42 @@ class UI(QMainWindow):
             class_grade.append(format_round(six_week_grade, max_decimal_places))
             # Calculate semester averages
             if len(class_grade) == 3:
-                sem1_grade = sum(class_grade[:2]) / 3
+                sem1_grade = sum(class_grade[:3]) / 3
                 class_grade.append(format_round(sem1_grade, max_decimal_places))
             elif len(class_grade) == 7:
                 sem2_grade = sum(class_grade[4:7]) / 3
                 class_grade.append(format_round(sem2_grade, max_decimal_places))
             # Calculate final
         return class_grade
+
+    def experiment_add(self):
+        """
+        Called when the user presses the add button in the experiment mode
+        Adds an item to the class view tree
+        """
+        item = QTreeWidgetItem()
+        item.setText(0, '-----')
+        item.setText(1, '--')
+        item.setText(2, '--')
+        weeks_filter = self.weeksFilter.currentItem().text()
+        if weeks_filter != 'All':
+            item.setText(3, weeks_filter)
+        else:
+            item.setText(3, '--')
+        item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+        self.classViewItems.append(item)
+        self.classViewTree.addTopLevelItem(item)
+
+    def experiment_remove(self):
+        """
+        Called when user presses the delete button in the experiment mode
+        Deletes the selected class view item
+        """
+        root = self.classViewTree.invisibleRootItem()
+        for item in self.classViewTree.selectedItems():
+            (item.parent() or root).removeChild(item)
+            self.classViewItems.remove(item)
+
 
     def class_tree_edited(self):
         # text = self.classViewTree.item(model_index).text()
@@ -544,22 +579,13 @@ class UI(QMainWindow):
         Get password and decrypt
         """
         if self.loginRememberCheck.isChecked():
-            # reads key from file
-            with open("user/aes.bin", "rb") as file_in:
-                key = file_in.read()
-            # reads encrypted user info from file
-            with open("user/encrypted.bin", "rb") as file_in:
-                nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
-            # generate cypher from key
-            cipher = AES.new(key, AES.MODE_EAX, nonce)
-            # decrypts user login
-            data = cipher.decrypt_and_verify(ciphertext, tag).decode()
+            data = get_user_info()
             # set text for refresh label
             self.lastRefreshedLabel.setText('Refreshing...')
             # run scraper as thread: inputs user login
             Thread(
                 target=self.run_scraper,
-                args=json.loads(data),
+                args=data,
                 daemon=True
             ).start()
         else:
@@ -610,6 +636,19 @@ def delete_folder(folder_name):
 
 def format_round(number, decimal_places):
     return float('{0:.{1}f}'.format(number, decimal_places))
+
+
+def get_user_info():
+    # reads key from file
+    with open("user/aes.bin", "rb") as file_in:
+        key = file_in.read()
+    # reads encrypted user info from file
+    with open("user/encrypted.bin", "rb") as file_in:
+        nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+    # generate cypher from key
+    cipher = AES.new(key, AES.MODE_EAX, nonce)
+    # decrypts user login
+    return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
 
 
 if __name__ == "__main__":
