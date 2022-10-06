@@ -27,31 +27,17 @@ except:
     sys.path.append(os.path.dirname(__file__))
 
 
-class EditableListStyledItemDelegate(QtWidgets.QStyledItemDelegate):
-    editFinished = QtCore.pyqtSignal(int)
-    index = None
+class EditableStyledItemDelegate(QtWidgets.QStyledItemDelegate):
+    editFinished = QtCore.pyqtSignal(QtCore.QModelIndex)
+    model_index = None
 
     def __init__(self, parent: QtCore.QObject = None):
         super().__init__(parent)
-        self.closeEditor.connect(lambda: self.editFinished.emit(self.index.row()))
+        self.closeEditor.connect(lambda: self.editFinished.emit(self.model_index))
 
-    def setEditorData(self, editor: QtWidgets.QWidget, index: QtCore.QModelIndex):
-        self.index = index
-        return super().setEditorData(editor, index)
-
-
-class EditableTreeStyledItemDelegate(QtWidgets.QStyledItemDelegate):
-    editFinished = QtCore.pyqtSignal(str, int)
-    index = None
-    text = None
-    def __init__(self, parent: QtCore.QObject = None):
-        super().__init__(parent)
-        self.closeEditor.connect(lambda: self.editFinished.emit(self.text, 0))
-
-    def setEditorData(self, editor: QtWidgets.QWidget, index: QtCore.QModelIndex):
-        self.index = index
-        self.text = editor.text()
-        return super().setEditorData(editor, index)
+    def setEditorData(self, editor: QtWidgets.QWidget, model_index: QtCore.QModelIndex):
+        self.model_index = model_index
+        return super().setEditorData(editor, model_index)
 
 
 class UI(QMainWindow):
@@ -112,13 +98,13 @@ class UI(QMainWindow):
         # signal to display error message
         self.error_msg_signal.connect(self.error_msg_signal_handler)
 
-        item_delegate = EditableListStyledItemDelegate(self.classesFilter)
-        item_delegate.editFinished.connect(self.edited_item)
-        self.classesFilter.setItemDelegate(item_delegate)
+        class_item_delegate = EditableStyledItemDelegate(self.classesFilter)
+        class_item_delegate.editFinished.connect(self.edited_item)
+        self.classesFilter.setItemDelegate(class_item_delegate)
 
-        item_delegate = EditableTreeStyledItemDelegate(self.classViewTree)
-        item_delegate.editFinished.connect(lambda item, col: self.class_tree_edited(item, col))
-        self.classViewTree.setItemDelegate(item_delegate)
+        class_view_delegate = EditableStyledItemDelegate(self.classViewTree)
+        class_view_delegate.editFinished.connect(self.class_tree_edited)
+        self.classViewTree.setItemDelegate(class_view_delegate)
 
         # tree connections
         # self.classViewTree.itemChanged.connect(lambda item, col: self.class_tree_edited(item, col))
@@ -220,8 +206,10 @@ class UI(QMainWindow):
             # Calculate final
         return class_grade
 
-    def class_tree_edited(self, item, col):
-        print(item, col)
+    def class_tree_edited(self, model_index):
+        text = self.classViewTree.item(model_index).text()
+        print(model_index, text)
+        
         self.display_experiment_grades()
 
     def display_experiment_grades(self):
@@ -239,11 +227,12 @@ class UI(QMainWindow):
         classes_item_index = self.get_selected_filter_index(self.classesFilter)
         return self.class_assignments[classes_item_index - 1]
 
-    def edited_item(self, index):
+    def edited_item(self, model_index):
         """
         Runs everytime a class name is edited.
         Updates vertical header and saves to file
         """
+        index = model_index.row()  # Get row index
         text = self.classesFilter.item(index).text()
         self._class_ids[self.skyward_data[index - 1]['class_info']['id']] = text
         self.skywardTable.setVerticalHeaderItem(index - 1, QtWidgets.QTableWidgetItem(text))
