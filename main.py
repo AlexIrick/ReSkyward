@@ -1,4 +1,5 @@
 from Crypto.Random import get_random_bytes
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
@@ -128,7 +129,8 @@ class UI(QMainWindow):
         if self.experimentGroup.isHidden():
             # Enable experiment
             self.experimentGroup.show()
-            self.experimentButton.setText('>')
+            self.experimentButton.setText('')
+            self.experimentButton.setFont(QFont('Segoe UI', 14))
             self.classViewTree.header().hideSection(2)
             # Generate experiment
             if len(self.experimentItems) == 0:
@@ -143,7 +145,8 @@ class UI(QMainWindow):
         else:
             # Disable experiment
             self.experimentGroup.hide()
-            self.experimentButton.setText('<')
+            self.experimentButton.setText('🖩')
+            self.experimentButton.setFont(QFont('Poppins', 25))
             self.classViewTree.header().showSection(2)
             # for item in self.classViewItems:
             #     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
@@ -198,14 +201,14 @@ class UI(QMainWindow):
         Adds an item to the class view tree
         """
         item = QTreeWidgetItem()
-        item.setText(0, '-----')
-        item.setText(1, '--')
-        item.setText(2, '--')
+        item.setText(0, '-----')  # Name
+        item.setText(1, '---')  # Grade
+        item.setText(2, '---')  # Due date (not displayed)
         weeks_filter = self.weeksFilter.currentItem().text()
-        if weeks_filter != 'All':
+        if weeks_filter != 'All':  # 6-week
             item.setText(3, weeks_filter)
         else:
-            item.setText(3, '--')
+            item.setText(3, '---')
         item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
         self.classViewItems.append(item)
         self.classViewTree.addTopLevelItem(item)

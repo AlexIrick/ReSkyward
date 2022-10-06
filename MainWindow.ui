@@ -306,7 +306,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="notLoggedInPage">
                <layout class="QGridLayout" name="gridLayout_9">
@@ -482,7 +482,7 @@
                     </column>
                     <column>
                      <property name="text">
-                      <string>Week</string>
+                      <string>Six Week</string>
                      </property>
                      <property name="font">
                       <font>
@@ -495,23 +495,29 @@
                   </item>
                   <item>
                    <widget class="QPushButton" name="experimentButton">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
                     <property name="maximumSize">
                      <size>
                       <width>28</width>
-                      <height>16777215</height>
+                      <height>35</height>
                      </size>
                     </property>
                     <property name="font">
                      <font>
                       <family>Poppins</family>
-                      <pointsize>9</pointsize>
+                      <pointsize>25</pointsize>
                      </font>
                     </property>
                     <property name="layoutDirection">
                      <enum>Qt::LeftToRight</enum>
                     </property>
                     <property name="text">
-                     <string>&lt;</string>
+                     <string>🖩</string>
                     </property>
                     <property name="flat">
                      <bool>true</bool>
@@ -617,8 +623,17 @@
                            <height>35</height>
                           </size>
                          </property>
+                         <property name="font">
+                          <font>
+                           <family>Segoe UI</family>
+                           <pointsize>8</pointsize>
+                          </font>
+                         </property>
                          <property name="text">
-                          <string>+</string>
+                          <string></string>
+                         </property>
+                         <property name="flat">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
@@ -644,6 +659,9 @@
                          </property>
                          <property name="text">
                           <string></string>
+                         </property>
+                         <property name="flat">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
