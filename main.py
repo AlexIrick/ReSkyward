@@ -106,9 +106,6 @@ class UI(QMainWindow):
         class_view_delegate.editFinished.connect(self.class_tree_edited)
         self.classViewTree.setItemDelegate(class_view_delegate)
 
-        # tree connections
-        # self.classViewTree.itemChanged.connect(lambda item, col: self.class_tree_edited(item, col))
-
         # hide filters
         self.classesFilter.hide()
         self.weeksFilter.hide()
@@ -117,9 +114,7 @@ class UI(QMainWindow):
 
         # set dark title bar
         dark_title_bar(int(self.winId()))
-        # self.login(False)
         self.load_skyward()
-        # self.save_settings()
         self.load_config()
         splash.hide()
         self.show()
@@ -133,7 +128,7 @@ class UI(QMainWindow):
             self.experimentGroup.show()
             self.experimentButton.setText('>')
             self.classViewTree.header().hideSection(2)
-            # generate experiment
+            # Generate experiment
             if len(self.experimentItems) == 0:
                 periods = ['1st', '2nd', '3rd', 'Sem1', '4th', '5th', '6th', 'Sem2', 'Avg']
                 for period in periods:
@@ -152,7 +147,6 @@ class UI(QMainWindow):
             #     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
             classes_item_index = self.get_selected_filter_index(self.classesFilter)
             self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text(), True)
-            # self.experimentTree.clear()
 
     def experiment_calculate_grades(self):
         max_decimal_places = 2
@@ -173,7 +167,7 @@ class UI(QMainWindow):
                 else:
                     all_class_grades[six_week][weight] = [grade]
 
-        # six weeks
+        # Six weeks
         class_grade = []
         for six_week, value in all_class_grades.items():
             # Calculate six week averages
@@ -194,14 +188,13 @@ class UI(QMainWindow):
 
     def class_tree_edited(self):
         # text = self.classViewTree.item(model_index).text()
-
         self.display_experiment_grades()
 
     def display_experiment_grades(self):
         grades = self.experiment_calculate_grades()
         for i, grade in enumerate(grades):
             self.experimentItems[i].setText(1, str(grade))
-        # make items editable
+        # Make items editable
         for item in self.classViewItems:
             item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
 
@@ -229,7 +222,7 @@ class UI(QMainWindow):
         Runs whenever a filter is clicked
         Changes skyward views
         """
-        # get indexes of selected filter item
+        # Get indexes of selected filter item
         classes_item_index = self.get_selected_filter_index(self.classesFilter)
         # If they are both set to all then change to table view
         if classes_item_index == 0:
@@ -245,7 +238,7 @@ class UI(QMainWindow):
                 self.load_class_view(self.class_assignments[classes_item_index - 1],
                                      self.weeksFilter.currentItem().text(), not self.classViewItems)
 
-        # hide skyward table columns according to filters
+        # Hide skyward table columns according to filters
         self.hide_skyward_table_columns()
         # Calculate and display experiment grades if its not hidden
         if not self.experimentGroup.isHidden():
@@ -271,43 +264,40 @@ class UI(QMainWindow):
         :param assignments: List of assignments in the selected class
         :param week_filter: Current selected 6-weeks filter (text)
         """
-
-        # self.classViewItems = []
         if should_regen:
-            print(1)
-            # clear tree view (does not clear headers)
+            # Clear tree view (does not clear headers)
             self.classViewTree.clear()
             self.classViewItems = []
             for assignment in assignments:
-                # only add assignment if in the correct 6-weeks
+                # Only add assignment if in the correct 6-weeks
                 if 'due' in assignment and week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']:
-                    # hide weeks column if not in all-weeks filter
+                    # Hide weeks column if not in all-weeks filter
                     self.hide_weeks_column(week_filter)
-                    # get assignment data; only if it exists
+                    # Get assignment data; only if it exists
                     item = QTreeWidgetItem()
                     if 'name' in assignment:
-                        # set assignment name
+                        # Set assignment name
                         name = assignment['name']
                         item.setText(0, name)
                     if 'row' in assignment and 'grade' in assignment['row']:
-                        # set grade
+                        # Set grade
                         grade = assignment['row']['grade']
                         item.setText(1, grade)
                     else:
                         item.setText(1, '---')
 
-                    # set due date
+                    # Set due date
                     due_date = assignment['due'][0]
                     item.setText(2, due_date)
-                    # set 6 weeks
+                    # Set 6 weeks
                     week = assignment['due'][1].strip('()').lower()
                     item.setText(3, week)
 
                     self.classViewItems.append(item)
-                    # add assignment to tree
+                    # Add assignment to tree
                     self.classViewTree.addTopLevelItem(item)
         else:
-            # hide weeks column if not in all-weeks filter
+            # Hide weeks column if not in all-weeks filter
             self.hide_weeks_column(week_filter)
             for item in self.classViewItems:
                 item.setHidden(week_filter.lower() != 'all' and item.text(3) != week_filter.lower())
