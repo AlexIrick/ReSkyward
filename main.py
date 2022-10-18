@@ -165,9 +165,11 @@ class UI(QMainWindow):
                 six_week = item.text(3)
                 weight = 1
                 grade = item.text(1)
-                # If grade is set to P (passing) then set to 100
+                # Pass/fail handling
                 if grade == 'P':
                     grade = '100'
+                elif grade == 'F':
+                    grade = '0'
                 # Make sure grade is numeric
                 if grade.isnumeric():
                     grade = float(grade)
