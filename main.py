@@ -310,7 +310,8 @@ class UI(QMainWindow):
             self.classViewItems = []
             for assignment in assignments:
                 # Only add assignment if in the correct 6-weeks
-                if 'due' in assignment and week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']:
+                # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
+                if 'due' in assignment:
                     # Hide weeks column if not in all-weeks filter
                     self.hide_weeks_column(week_filter)
                     # Get assignment data; only if it exists
@@ -339,8 +340,8 @@ class UI(QMainWindow):
         else:
             # Hide weeks column if not in all-weeks filter
             self.hide_weeks_column(week_filter)
-            for item in self.classViewItems:
-                item.setHidden(week_filter.lower() != 'all' and item.text(3) != week_filter.lower())
+        for item in self.classViewItems:
+            item.setHidden(week_filter.lower() != 'all' and item.text(3) != week_filter.lower())
 
     def hide_weeks_column(self, week_filter):
         """
