@@ -145,7 +145,7 @@ def createSession():
     sess = Session()
     sess.headers = headers
     return sess
-    
+
 
 def exampleRun():
     """
@@ -174,12 +174,11 @@ def exampleRun():
     selectedGroup = groups[prompt_values(groups)]
     # Get rules (a/b days) per group
     rules = BellRulesPerGroup(sess).get(group=selectedGroup, schedule=schedule)
+    print('---')
     
     """--- Show information for today ---"""
-    
     today = rules[str(date.today())]  # Get today's rule, given the date as YYYY-MM-DD
     print('Today is', today.name)  # Print today's name (A or B day)
-    print('Today\'s schedule:')
     # Get today's schedule
     todaySchedule = BellDayPerSchedule(sess).get(today.schedule)
     # Print class times
@@ -187,23 +186,29 @@ def exampleRun():
         print('Time:', period.time.strftime('%I:%M %p'), '-', # Time, formatted to 12 hour
               'Names:', period.names, '-',  # Class names
               'Icon:', period.icon)         # Icon svg file name
+    print('---')
     
     """--- Get current class right now ---"""
     
-    now = datetime.now()
     # now = parser.parse('09:15')  # For testing
-    for id, period in todaySchedule.items():
-        if period.time > now:  # Find current class. Time can be compared as datetime objects
-            print('Current class:', period.names)
-            print('Time left:', period.time - now)
-            try:
-                print('Next class:', todaySchedule[id + 1].names)
-            except KeyError:
-                print('Last class of the day!')
-            break
-    else:
-        print('No more classes today!')
+    t = Terminal()
+    while True:
+        now = datetime.now()
+        # move terminal to 0, 0
+        for id, period in todaySchedule.items():
+            if period.time > now:  # Find current class. Time can be compared as datetime objects
+                print('Current class:', period.names, '\t\t')
+                print('Time left:', period.time - now, '\t\t')
+                try:
+                    print('Next class:', todaySchedule[id + 1].names, '\t\t')
+                except KeyError:
+                    print('Last class of the day!')
+                break
+        else:
+            print('No more classes today!')
+        print(t.move_up(3), end='')
         
     
 if __name__ == "__main__":
+    from blessed import Terminal
     exampleRun()
