@@ -177,7 +177,7 @@ def exampleRun():
     
     """--- Show information for today ---"""
     
-    today = rules[str(date.today())]  # Get today's rule (formatted as YYYY-MM-DD)
+    today = rules[str(date.today())]  # Get today's rule, given the date as YYYY-MM-DD
     print('Today is', today.name)  # Print today's name (A or B day)
     print('Today\'s schedule:')
     # Get today's schedule
