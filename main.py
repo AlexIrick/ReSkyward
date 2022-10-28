@@ -87,6 +87,8 @@ class UI(QMainWindow):
         self.experimentAddButton.clicked.connect(self.experiment_add)
         self.experimentRemoveButton.clicked.connect(self.experiment_remove)
 
+        self.bellToggleButton.clicked.connect(self.bell_toggle)
+
         # list connections; x = item clicked
         self.classesFilter.itemClicked.connect(lambda: self.filter_selected('class'))
         self.weeksFilter.itemClicked.connect(lambda: self.filter_selected('week'))
@@ -109,6 +111,12 @@ class UI(QMainWindow):
         self.weeksFilter.hide()
         # hide experiment
         self.experimentGroup.hide()
+        # hide bell
+        self.bellContainer.hide()
+
+        # set icons
+        # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
+
 
         # set dark title bar
         self.loginLabel.setText(f'Logged in as {get_user_info()[0]}')
@@ -121,6 +129,19 @@ class UI(QMainWindow):
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
+
+    def bell_toggle(self):
+        """
+        Toggles widget
+        """
+        if self.bellContainer.isHidden():
+            self.bellContainer.show()
+            self.bellToggleButton.setText('')
+            self.bellToggleButton.setFont(QFont('Segoe UI', 14))
+        else:
+            self.bellContainer.hide()
+            self.bellToggleButton.setText('🔔')
+            self.bellToggleButton.setFont(QFont('Poppins', 13))
 
     def experiment_toggle(self):
         """
