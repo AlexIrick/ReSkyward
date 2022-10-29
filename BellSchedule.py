@@ -139,7 +139,6 @@ class BellDefaultRulesPerGroup(GetBellRule):
                     })
         return rules
 
-    
 class BellRulesPerGroup(GetBellRule):
     """group: BellGroup"""
     url = 'rule?select=*&group=eq.{id}&type=eq.override&date=gte.{date}'
@@ -246,11 +245,9 @@ def exampleRun():
     
     """--- Get current class right now ---"""
     
-    # now = parser.parse('09:15')  # For testing
     t = Terminal()
     while True:
         now = datetime.now()
-        # move terminal to 0, 0
         for id, period in todaySchedule.items():
             if period.time > now:  # Find current class. Time can be compared as datetime objects
                 print('Current class:', period.names, '\t\t')
@@ -262,6 +259,7 @@ def exampleRun():
                 break
         else:
             print('No more classes today!')
+        # Move terminal up 3 lines
         print(t.move_up(3), end='')
         
     
