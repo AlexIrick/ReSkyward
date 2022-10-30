@@ -211,7 +211,6 @@ class UI(QMainWindow):
             today = rules[day]  # Get today's rule, given the date as YYYY-MM-DD
         except KeyError:
             # No school today; print the next day of school and exit
-            print('Next day of school:', end=' ')
             self.refresh_bell_view(False)
             return
 
