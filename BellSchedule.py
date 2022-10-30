@@ -373,7 +373,7 @@ def get_relevant_schedule_info(schedule_data):
         # time_left = str(tomorrow - now)
         # time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
         next_day = schedule_data['next_school_day']
-        display_data['next_period'] = f"No more classes today!\nThe next school day is \"{next_day.name}\""
+        display_data['next_period'] = f"No more classes today! The next school day is \"{next_day.name}\""
     return display_data
         
     

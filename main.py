@@ -127,7 +127,9 @@ class UI(QMainWindow):
         # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
 
         # set dark title bar
-        self.loginLabel.setText(f'Logged in as {get_user_info()[0]}')
+        username = get_user_info()[0]
+        self.loginLabel.setText(f'Logged in as {username}')
+        self.helloUserLabel.setText(f'Hello {username}!')
 
         dark_title_bar(int(self.winId()))
         self.load_skyward()
@@ -139,7 +141,7 @@ class UI(QMainWindow):
     error_msg_signal = pyqtSignal(str)
 
     """
-    Bell scraper
+    ---Bell scraper---
     """
 
     def bell_toggle(self):
@@ -488,6 +490,7 @@ class UI(QMainWindow):
         else:
             self.database_refreshed.emit()
             self.loginLabel.setText(f'Logged in as {username}')
+            self.helloUserLabel.setText(f'Hello {username}!')
 
     """
     ---Settings---
