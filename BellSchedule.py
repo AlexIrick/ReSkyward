@@ -261,6 +261,121 @@ def exampleRun():
             print('No more classes today!')
         # Move terminal up 3 lines
         print(t.move_up(3), end='')
+
+
+def get_schedule(district_id, school_id, group_id):
+    """
+    Gets the schedule data
+    :param district_id: ID of district
+    :param school_id: ID of school
+    :param group_id: ID of group
+    :return: Returns schedule data and string denoting if there is school or not
+    """
+
+    """--- Gathering information ---"""
+    sess = createSession()
+    # Get district
+    districts = BellPopularDistricts(sess).get()
+    selected_district = districts[district_id]
+    # Get school
+    schools = BellSchoolsPerDistrict(sess).get(district=selected_district)
+    selected_school = schools[school_id]
+    data = {'selected_school': selected_school}
+    
+    # Get schedule names per school
+    schedule = BellSchedulePerSchool(sess).get(school=selected_school)
+    schedule[0] = BellSchedule({'id': 0, 'name': 'No School'})
+    # Get groups (grade levels) per school
+    groups = BellGroupsPerSchool(sess).get(school=selected_school)
+    selected_group = groups[group_id]
+    # Get rules (a/b days) per group
+    rules = BellRulesPerGroup(sess).get(group=selected_group, schedule=schedule)
+
+    # self.bellCountdownGroup.setTitle(selected_school.name)
+
+    """--- Show information for today ---"""
+    day = str(date.today())
+    # day = "2022-11-11"
+
+    days = sorted(rules.items())  # Listed days
+
+    for listed_day, bell_day in days:
+        # If the day is after today and has a schedule
+        if listed_day > day and bell_day.schedule:
+            data['next_school_day'] = rules[listed_day]
+            break
+
+    try:
+        today = rules[day]  # Get today's rule, given the date as YYYY-MM-DD
+    except KeyError:
+        # No school today; print the next day of school and exit
+        # self.refresh_bell_view(False)
+        return [data, "no school"]
+
+    data['today'] = today  # Set today's name (A or B day)
+
+    # Get today's schedule
+    today_schedule = BellDayPerSchedule(sess).get(today.schedule)
+    data['today_schedule'] = today_schedule
+    return [data, "school"]
+
+
+def get_relevant_schedule_info(schedule_data):
+    """
+    Gets info from schedule and current period
+    :param schedule_data: Dictionary containing info from get_schedule()
+    :return: 
+    """
+    if not schedule_data:
+        return
+
+    display_data = {}
+    if 'is_school' in schedule_data and not schedule_data['is_school']:
+        next_day = schedule_data['next_school_day']
+        # If there is no school then update labels accordingly
+        display_data['today'] = 'No schedule today!'  # No school today
+
+        # Show next school day
+        next_day_date = parser.parse(next_day.date)
+        num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}).get(n % 10, "th")
+        next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
+
+        display_data['current_period'] = 'It looks like there is no schedule today. Enjoy the day off!'
+        display_data['time_left'] = ''
+        display_data['next_period'] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
+        return display_data
+
+    
+    now = datetime.now()
+    today_schedule = schedule_data['today_schedule']
+    # today = schedule_data['today']
+    # selected_school = schedule_data['selected_school']
+    for id, period in today_schedule.items():
+        if period.time > now:  # Find current class. Time can be compared as datetime objects
+            # print('Current class:', period.names, '\t\t')
+            display_data['current_period'] = "Current: " + " / ".join(period.names)
+            # print('Time left:', period.time - now, '\t\t')
+            time_left = str(period.time - now)
+            # remove microseconds and leading 0 from hours
+            display_data['time_left'] = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]
+
+            try:
+                display_data['next_period'] = "Next: " + " / ".join(today_schedule[id + 1].names)
+            except KeyError:
+                display_data['next_period'] = 'Last class of the day!'
+
+            break
+    else:
+        display_data['time_left'] = ""
+        display_data['current_period'] = "After school hours"
+
+        # date_time_str = '10/30/22 07:00:00'
+        # tomorrow = datetime.strptime(date_time_str, '%m/%d/%y %H:%M:%S')
+        # time_left = str(tomorrow - now)
+        # time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
+        next_day = schedule_data['next_school_day']
+        display_data['next_period'] = f"No more classes today!\nThe next school day is \"{next_day.name}\""
+    return display_data
         
     
 if __name__ == "__main__":

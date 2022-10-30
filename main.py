@@ -173,105 +173,29 @@ class UI(QMainWindow):
         ).start()
 
     def get_bell_data(self):
-        """--- Gathering information ---"""
-        sess = BellSchedule.createSession()
-        # Get district
-        districts = BellSchedule.BellPopularDistricts(sess).get()
-        selected_district = districts[4]
-        # Get school
-        schools = BellSchedule.BellSchoolsPerDistrict(sess).get(district=selected_district)
-        selected_school = schools[4]
-        self.bellData['selected_school'] = selected_school
+        """
+        Gets bell schedule data
+        """
+        result = BellSchedule.get_schedule(4, 4, 13)
+        self.bellCountdownGroup.setTitle(result[0]['selected_school'].name)
+        self.bellData = result[0]
+        if result[1] == "no school":
+            self.bellData['is_school'] = False
 
-        # Get schedule names per school
-        schedule = BellSchedule.BellSchedulePerSchool(sess).get(school=selected_school)
-        schedule[0] = BellSchedule.BellSchedule({'id': 0, 'name': 'No School'})
-        # Get groups (grade levels) per school
-        groups = BellSchedule.BellGroupsPerSchool(sess).get(school=selected_school)
-        selected_group = groups[13]
-        # Get rules (a/b days) per group
-        rules = BellSchedule.BellRulesPerGroup(sess).get(group=selected_group, schedule=schedule)
+        if 'today_schedule' in self.bellData and not self.bellData['today_schedule']:
+            # If today's schedule is empty (holiday)
+            self.bellData['is_school'] = False
+        self.refresh_bell_view()
 
-        self.bellCountdownGroup.setTitle(selected_school.name)
-
-        """--- Show information for today ---"""
-        day = str(date.today())
-        # day = "2022-11-11"
-
-        days = sorted(rules.items())  # Listed days
-
-        for listed_day, bell_day in days:
-            # If the day is after today and has a schedule
-            if listed_day > day and bell_day.schedule:
-                self.bellData['next_school_day'] = rules[listed_day]
-                break
-
-        try:
-            today = rules[day]  # Get today's rule, given the date as YYYY-MM-DD
-        except KeyError:
-            # No school today; print the next day of school and exit
-            self.refresh_bell_view(False)
-            return
-
-        self.bellData['today'] = today  # Set today's name (A or B day)
-
-        # Get today's schedule
-        today_schedule = BellSchedule.BellDayPerSchedule(sess).get(today.schedule)
-        self.bellData['today_schedule'] = today_schedule
-
-    def refresh_bell_view(self, is_school=True):
-        if not is_school or ('today_schedule' in self.bellData and not self.bellData['today_schedule']):
-            next_day = self.bellData['next_school_day']
-            # If there is no school then update labels accordingly
-            self.bellDayLabel.setText('No schedule today!')  # No school today
-
-            # Show next school day
-            next_day_date = parser.parse(next_day.date)
-            num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}).get(n % 10, "th")
-            next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
-
-            self.bellCurrentLabel.setText("It looks like there is no schedule today. Enjoy the day off!")
-            self.bellCountdownLabel.setText("")
-            self.bellNextLabel.setText(f'The next school day is \"{next_day.name}\", on {next_day_date}.')
-            return
-
-        if len(self.bellData) < 4:
-            return
-
-        now = datetime.now()
-        today_schedule = self.bellData['today_schedule']
-        today = self.bellData['today']
-        selected_school = self.bellData['selected_school']
-        for id, period in today_schedule.items():
-            if period.time > now:  # Find current class. Time can be compared as datetime objects
-                # print('Current class:', period.names, '\t\t')
-                period_name = "Current: " + " / ".join(period.names)
-                # print('Time left:', period.time - now, '\t\t')
-                time_left = str(period.time - now)
-                time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
-
-                try:
-                    next_period = "Next: " + " / ".join(today_schedule[id + 1].names)
-                except KeyError:
-                    next_period = 'Last class of the day!'
-
-                break
-        else:
-            time_left = ""
-            period_name = "After school hours"
-
-            # date_time_str = '10/30/22 07:00:00'
-            # tomorrow = datetime.strptime(date_time_str, '%m/%d/%y %H:%M:%S')
-            # time_left = str(tomorrow - now)
-            # time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
-            next_day = self.bellData['next_school_day']
-            next_period = f"No more classes today!\nThe next school day is \"{next_day.name}\""
-
-        self.bellCountdownGroup.setTitle(selected_school.name)
-        self.bellDayLabel.setText(today.name)
-        self.bellCurrentLabel.setText(period_name)
-        self.bellCountdownLabel.setText(time_left)
-        self.bellNextLabel.setText(next_period)
+    def refresh_bell_view(self):
+        if display_data := BellSchedule.get_relevant_schedule_info(self.bellData):
+            if 'selected_school' in self.bellData:
+                self.bellCountdownGroup.setTitle(self.bellData['selected_school'].name)
+            if 'today' in self.bellData:
+                self.bellDayLabel.setText(self.bellData['today'].name)
+            self.bellCurrentLabel.setText(display_data['current_period'])
+            self.bellCountdownLabel.setText(display_data['time_left'])
+            self.bellNextLabel.setText(display_data['next_period'])
 
     """
     Experiment
