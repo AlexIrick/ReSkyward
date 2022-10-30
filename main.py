@@ -1,8 +1,12 @@
+from dateutil import parser
+import re
+from datetime import datetime, date
+
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5 import uic
 import sys, os
 from glob import glob
@@ -15,6 +19,7 @@ import requests.exceptions
 import darkdetect
 import ctypes as ct
 import shutil
+import BellSchedule
 
 version = 'v0.1.0 BETA'
 
@@ -114,9 +119,14 @@ class UI(QMainWindow):
         # hide bell
         self.bellContainer.hide()
 
+        self.bellRefreshTimer = QTimer()
+        self.bellRefreshTimer.setInterval(500)  # .5 seconds
+        self.bellRefreshTimer.timeout.connect(self.refresh_bell_view)
+
+        self.bellData = {}
+
         # set icons
         # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
-
 
         # set dark title bar
         self.loginLabel.setText(f'Logged in as {get_user_info()[0]}')
@@ -130,18 +140,144 @@ class UI(QMainWindow):
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
 
+    """
+    Bell scraper
+    """
+
     def bell_toggle(self):
         """
-        Toggles widget
+        Toggles bell schedule view
         """
         if self.bellContainer.isHidden():
+            # Show bell container
             self.bellContainer.show()
             self.bellToggleButton.setText('')
             self.bellToggleButton.setFont(QFont('Segoe UI', 14))
+            Thread(
+                target=self.get_bell_data,
+                # args=None,
+                daemon=True
+            ).start()
+            self.bellRefreshTimer.start()
+            # self.get_bell_data()
         else:
             self.bellContainer.hide()
             self.bellToggleButton.setText('🔔')
             self.bellToggleButton.setFont(QFont('Poppins', 13))
+
+    def bell_refresh_start_thread(self):
+        print('timed out')
+        Thread(
+            target=self.refresh_bell_view,
+            # args=None,
+            daemon=True
+        ).start()
+
+    def get_bell_data(self):
+        """--- Gathering information ---"""
+        sess = BellSchedule.createSession()
+        # Get district
+        districts = BellSchedule.BellPopularDistricts(sess).get()
+        selected_district = districts[4]
+        # Get school
+        schools = BellSchedule.BellSchoolsPerDistrict(sess).get(district=selected_district)
+        selected_school = schools[4]
+        self.bellData['selected_school'] = selected_school
+
+        # Get schedule names per school
+        schedule = BellSchedule.BellSchedulePerSchool(sess).get(school=selected_school)
+        schedule[0] = BellSchedule.BellSchedule({'id': 0, 'name': 'No School'})
+        # Get groups (grade levels) per school
+        groups = BellSchedule.BellGroupsPerSchool(sess).get(school=selected_school)
+        selected_group = groups[13]
+        # Get rules (a/b days) per group
+        rules = BellSchedule.BellRulesPerGroup(sess).get(group=selected_group, schedule=schedule)
+
+        self.bellCountdownGroup.setTitle(selected_school.name)
+
+        """--- Show information for today ---"""
+        day = str(date.today())
+        # day = "2022-11-11"
+
+        days = sorted(rules.items())  # Listed days
+
+        for listed_day, bell_day in days:
+            # If the day is after today and has a schedule
+            if listed_day > day and bell_day.schedule:
+                self.bellData['next_school_day'] = rules[listed_day]
+                break
+
+        try:
+            today = rules[day]  # Get today's rule, given the date as YYYY-MM-DD
+        except KeyError:
+            # No school today; print the next day of school and exit
+            print('Next day of school:', end=' ')
+            self.refresh_bell_view(False)
+            return
+
+        self.bellData['today'] = today  # Set today's name (A or B day)
+
+        # Get today's schedule
+        today_schedule = BellSchedule.BellDayPerSchedule(sess).get(today.schedule)
+        self.bellData['today_schedule'] = today_schedule
+
+    def refresh_bell_view(self, is_school=True):
+        if not is_school or ('today_schedule' in self.bellData and not self.bellData['today_schedule']):
+            next_day = self.bellData['next_school_day']
+            # If there is no school then update labels accordingly
+            self.bellDayLabel.setText('No schedule today!')  # No school today
+
+            # Show next school day
+            next_day_date = parser.parse(next_day.date)
+            num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}).get(n % 10, "th")
+            next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
+
+            self.bellCurrentLabel.setText("It looks like there is no schedule today. Enjoy the day off!")
+            self.bellCountdownLabel.setText("")
+            self.bellNextLabel.setText(f'The next school day is \"{next_day.name}\", on {next_day_date}.')
+            return
+
+        if len(self.bellData) < 4:
+            return
+
+        now = datetime.now()
+        today_schedule = self.bellData['today_schedule']
+        today = self.bellData['today']
+        selected_school = self.bellData['selected_school']
+        for id, period in today_schedule.items():
+            if period.time > now:  # Find current class. Time can be compared as datetime objects
+                # print('Current class:', period.names, '\t\t')
+                period_name = "Current: " + " / ".join(period.names)
+                # print('Time left:', period.time - now, '\t\t')
+                time_left = str(period.time - now)
+                time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
+
+                try:
+                    next_period = "Next: " + " / ".join(today_schedule[id + 1].names)
+                except KeyError:
+                    next_period = 'Last class of the day!'
+
+                break
+        else:
+            time_left = ""
+            period_name = "After school hours"
+
+            # date_time_str = '10/30/22 07:00:00'
+            # tomorrow = datetime.strptime(date_time_str, '%m/%d/%y %H:%M:%S')
+            # time_left = str(tomorrow - now)
+            # time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
+            next_day = self.bellData['next_school_day']
+            next_period = f"No more classes today!\nThe next school day is \"{next_day.name}\""
+
+        self.bellCountdownGroup.setTitle(selected_school.name)
+        self.bellDayLabel.setText(today.name)
+        self.bellCurrentLabel.setText(period_name)
+        self.bellCountdownLabel.setText(time_left)
+        self.bellNextLabel.setText(next_period)
+
+    """
+    Experiment
+    """
 
     def experiment_toggle(self):
         """
@@ -172,7 +308,8 @@ class UI(QMainWindow):
             # for item in self.classViewItems:
             #     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
             classes_item_index = self.get_selected_filter_index(self.classesFilter)
-            self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text(), True)
+            self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text(),
+                                 True)
 
     def experiment_calculate_grades(self):
         """
@@ -198,7 +335,7 @@ class UI(QMainWindow):
                         all_class_grades[six_week][weight].append(grade)
                     else:
                         all_class_grades[six_week][weight] = [grade]
-                        
+
         # Six weeks
         class_grade = []
         for six_week, value in all_class_grades.items():
@@ -206,7 +343,7 @@ class UI(QMainWindow):
             six_week_grade = 0
             for weight in value.keys():
                 total = sum(all_class_grades[six_week][weight])
-                six_week_grade += total/len(all_class_grades[six_week][weight])*weight
+                six_week_grade += total / len(all_class_grades[six_week][weight]) * weight
             class_grade.append(format_round(six_week_grade, max_decimal_places))
             # Calculate semester averages
             if len(class_grade) == 3:
@@ -245,7 +382,6 @@ class UI(QMainWindow):
         for item in self.classViewTree.selectedItems():
             (item.parent() or root).removeChild(item)
             self.classViewItems.remove(item)
-
 
     def class_tree_edited(self):
         # text = self.classViewTree.item(model_index).text()
@@ -476,7 +612,6 @@ class UI(QMainWindow):
                 self.skywardTable.setItem(n, m, self.create_table_item(data))
             # ser class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
-
 
     @staticmethod
     def create_table_item(data):

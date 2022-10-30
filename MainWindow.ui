@@ -203,7 +203,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -323,6 +323,9 @@
                     <property name="text">
                      <string>Current: B3 &amp; B4 / Ben Barber</string>
                     </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
                    </widget>
                   </item>
                   <item row="2" column="0">
@@ -347,6 +350,9 @@
                     </property>
                     <property name="text">
                      <string>Next: A5</string>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
