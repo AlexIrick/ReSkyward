@@ -16,6 +16,7 @@ import darkdetect
 import ctypes as ct
 import shutil
 import BellSchedule
+import experimentMode
 
 version = 'v0.1.0 BETA'
 
@@ -104,7 +105,7 @@ class UI(QMainWindow):
         self.classesFilter.setItemDelegate(class_item_delegate)
 
         class_view_delegate = EditableStyledItemDelegate(self.classViewTree)
-        class_view_delegate.editFinished.connect(self.class_tree_edited)
+        class_view_delegate.editFinished.connect(self.display_experiment_grades)
         self.classViewTree.setItemDelegate(class_view_delegate)
 
         # hide filters
@@ -194,9 +195,8 @@ class UI(QMainWindow):
             self.bellCountdownLabel.setText(display_data['time_left'])
             self.bellNextLabel.setText(display_data['next_period'])
 
-    """
-    Experiment
-    """
+
+    """---Experiment---"""
 
     def experiment_toggle(self):
         """
@@ -234,61 +234,14 @@ class UI(QMainWindow):
         """
         Calculates the six weeks and semester averages
         """
-        max_decimal_places = 2
-        all_class_grades = {'1st': {}, '2nd': {}, '3rd': {}, '4th': {}, '5th': {}, '6th': {}}
-        # Formatted as:  {6-week: {Weight: [100, 100, 75], Weight2: [100, 99]}}
-        for item in self.classViewItems:
-            if item.text(3) in all_class_grades:
-                six_week = item.text(3)
-                weight = 1
-                grade = item.text(1)
-                # Pass/fail handling
-                if grade == 'P':
-                    grade = '100'
-                elif grade == 'F':
-                    grade = '0'
-                # Make sure grade is numeric
-                if grade.isnumeric():
-                    grade = float(grade)
-                    if weight in all_class_grades[six_week]:
-                        all_class_grades[six_week][weight].append(grade)
-                    else:
-                        all_class_grades[six_week][weight] = [grade]
-
-        # Six weeks
-        class_grade = []
-        for six_week, value in all_class_grades.items():
-            # Calculate six week averages
-            six_week_grade = 0
-            for weight in value.keys():
-                total = sum(all_class_grades[six_week][weight])
-                six_week_grade += total / len(all_class_grades[six_week][weight]) * weight
-            class_grade.append(format_round(six_week_grade, max_decimal_places))
-            # Calculate semester averages
-            if len(class_grade) == 3:
-                sem1_grade = sum(class_grade[:3]) / 3
-                class_grade.append(format_round(sem1_grade, max_decimal_places))
-            elif len(class_grade) == 7:
-                sem2_grade = sum(class_grade[4:7]) / 3
-                class_grade.append(format_round(sem2_grade, max_decimal_places))
-            # Calculate final
-        return class_grade
+        return experimentMode.calculate_grades(self.classViewItems)
 
     def experiment_add(self):
         """
         Called when the user presses the add button in the experiment mode
         Adds an item to the class view tree
         """
-        item = QTreeWidgetItem()
-        item.setText(0, '-----')  # Name
-        item.setText(1, '---')  # Grade
-        item.setText(2, '---')  # Due date (not displayed)
-        weeks_filter = self.weeksFilter.currentItem().text()
-        if weeks_filter != 'All':  # 6-week
-            item.setText(3, weeks_filter)
-        else:
-            item.setText(3, '---')
-        item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+        item = experimentMode.create_assignment_item(self.weeksFilter.currentItem().text())
         self.classViewItems.append(item)
         self.classViewTree.addTopLevelItem(item)
 
@@ -301,10 +254,6 @@ class UI(QMainWindow):
         for item in self.classViewTree.selectedItems():
             (item.parent() or root).removeChild(item)
             self.classViewItems.remove(item)
-
-    def class_tree_edited(self):
-        # text = self.classViewTree.item(model_index).text()
-        self.display_experiment_grades()
 
     def display_experiment_grades(self):
         grades = self.experiment_calculate_grades()
