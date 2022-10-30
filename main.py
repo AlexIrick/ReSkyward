@@ -16,7 +16,8 @@ import darkdetect
 import ctypes as ct
 import shutil
 import BellSchedule
-import experimentMode
+import experimentmode
+import skywardview
 
 version = 'v0.1.0 BETA'
 
@@ -195,8 +196,9 @@ class UI(QMainWindow):
             self.bellCountdownLabel.setText(display_data['time_left'])
             self.bellNextLabel.setText(display_data['next_period'])
 
-
-    """---Experiment---"""
+    """
+    ---Experiment---
+    """
 
     def experiment_toggle(self):
         """
@@ -234,14 +236,14 @@ class UI(QMainWindow):
         """
         Calculates the six weeks and semester averages
         """
-        return experimentMode.calculate_grades(self.classViewItems)
+        return experimentmode.calculate_grades(self.classViewItems)
 
     def experiment_add(self):
         """
         Called when the user presses the add button in the experiment mode
         Adds an item to the class view tree
         """
-        item = experimentMode.create_assignment_item(self.weeksFilter.currentItem().text())
+        item = experimentmode.create_assignment_item(self.weeksFilter.currentItem().text())
         self.classViewItems.append(item)
         self.classViewTree.addTopLevelItem(item)
 
@@ -269,6 +271,10 @@ class UI(QMainWindow):
     def get_current_assignments(self):
         classes_item_index = self.get_selected_filter_index(self.classesFilter)
         return self.class_assignments[classes_item_index - 1]
+
+    """
+    ---Skyward View---
+    """
 
     def edited_item(self, model_index):
         """
@@ -339,25 +345,8 @@ class UI(QMainWindow):
                 if 'due' in assignment:
                     # Hide weeks column if not in all-weeks filter
                     self.hide_weeks_column(week_filter)
-                    # Get assignment data; only if it exists
-                    item = QTreeWidgetItem()
-                    if 'name' in assignment:
-                        # Set assignment name
-                        name = assignment['name']
-                        item.setText(0, name)
-                    if 'row' in assignment and 'grade' in assignment['row']:
-                        # Set grade
-                        grade = assignment['row']['grade']
-                        item.setText(1, grade)
-                    else:
-                        item.setText(1, '---')
-
-                    # Set due date
-                    due_date = assignment['due'][0]
-                    item.setText(2, due_date)
-                    # Set 6 weeks
-                    week = assignment['due'][1].strip('()').lower()
-                    item.setText(3, week)
+                    # create class view item
+                    item = skywardview.create_class_view_item(assignment)
 
                     self.classViewItems.append(item)
                     # Add assignment to tree
@@ -365,8 +354,7 @@ class UI(QMainWindow):
         else:
             # Hide weeks column if not in all-weeks filter
             self.hide_weeks_column(week_filter)
-        for item in self.classViewItems:
-            item.setHidden(week_filter.lower() != 'all' and item.text(3) != week_filter.lower())
+        self.classViewItems = skywardview.hide_items_by_six_weeks(self.classViewItems, week_filter)
 
     def hide_weeks_column(self, week_filter):
         """
@@ -457,47 +445,19 @@ class UI(QMainWindow):
         # set horizontal table headers (grading periods)
         for n, data in enumerate(self.headers):
             # add text to table header
-            self.skywardTable.setHorizontalHeaderItem(n, self.create_table_item(data))
+            self.skywardTable.setHorizontalHeaderItem(n, skywardview.create_table_item(data, dark_mode))
 
         # set grades, class filter items, and vertical table headers (classes)
         for n, data in enumerate(self.skyward_data):
-            table_item = QtWidgets.QTableWidgetItem()
-            item = QtWidgets.QListWidgetItem()
-            if data['class_info']['id'] in self._class_ids:
-                # if the class has a custom name saved, use it
-                table_item.setText(self._class_ids[data['class_info']['id']])
-                item.setText(self._class_ids[data['class_info']['id']])
-            else:
-                # otherwise, use the class name from Skyward
-                table_item.setText(data['class_info']['class'])
-                item.setText(data['class_info']['class'])
-            # make item editable
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            # load items
+            table_item, item = skywardview.load_table_item(data, self._class_ids)
             # add item to table
             self.classesFilter.addItem(item)
             # add grades to table
             for m, data in enumerate(data['grades']):
-                self.skywardTable.setItem(n, m, self.create_table_item(data))
+                self.skywardTable.setItem(n, m, skywardview.create_table_item(data, dark_mode))
             # ser class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
-
-    @staticmethod
-    def create_table_item(data):
-        """
-        Returns a table item with the given data
-        """
-        table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
-        if data.get('highlighted'):
-            if dark_mode:
-                # set dark mode highlight color
-                table_item.setBackground(QtGui.QColor(52, 79, 113))
-            else:
-                # set light mode highlight color
-                table_item.setBackground(QtGui.QColor(255, 255, 120))
-        if data.get('tooltip'):
-            # set tooltip
-            table_item.setToolTip(data['tooltip'])
-        return table_item
 
     def title_bar_button_clicked(self, button_index, checked):
         """
@@ -528,6 +488,10 @@ class UI(QMainWindow):
         else:
             self.database_refreshed.emit()
             self.loginLabel.setText(f'Logged in as {username}')
+
+    """
+    ---Settings---
+    """
 
     def save_settings(self):
         """
