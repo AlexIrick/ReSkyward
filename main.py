@@ -502,7 +502,7 @@ class UI(QMainWindow):
         Called when a settings button is clicked. Shows settings page and selects settings category
         :param index: Index of settings category. Set to -1 to not change row
         """
-        self.title_bar_button_clicked(3, self.settingsButton)
+        self.title_bar_button_clicked(3, self.settingsButton.isChecked())
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
 
