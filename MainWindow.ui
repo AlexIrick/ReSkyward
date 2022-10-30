@@ -663,7 +663,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="notLoggedInPage">
                <layout class="QGridLayout" name="gridLayout_9">
@@ -725,7 +725,7 @@
                    </spacer>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton">
+                   <widget class="QPushButton" name="settingsLoginButton">
                     <property name="font">
                      <font>
                       <family>Poppins</family>
@@ -1314,7 +1314,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
-             <widget class="QListWidget" name="listWidget">
+             <widget class="QListWidget" name="settingsCategoriesList">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -1328,7 +1328,7 @@
                </font>
               </property>
               <property name="currentRow">
-               <number>-1</number>
+               <number>0</number>
               </property>
               <item>
                <property name="text">
@@ -1830,7 +1830,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>listWidget</sender>
+   <sender>settingsCategoriesList</sender>
    <signal>currentRowChanged(int)</signal>
    <receiver>settingsStackedWidget</receiver>
    <slot>setCurrentIndex(int)</slot>
@@ -1842,22 +1842,6 @@
     <hint type="destinationlabel">
      <x>296</x>
      <y>294</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButton</sender>
-   <signal>clicked()</signal>
-   <receiver>settingsButton</receiver>
-   <slot>click()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>628</x>
-     <y>301</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>962</x>
-     <y>48</y>
     </hint>
    </hints>
   </connection>

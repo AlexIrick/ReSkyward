@@ -81,7 +81,9 @@ class UI(QMainWindow):
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
-        self.settingsButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
+        self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
+        self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
+        self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(3))
         self.saveButton.clicked.connect(self.save_settings)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
@@ -495,6 +497,14 @@ class UI(QMainWindow):
     """
     ---Settings---
     """
+    def settings_clicked(self, index):
+        """
+        Called when a settings button is clicked. Shows settings page and selects settings category
+        :param index: Index of settings category. Set to -1 to not change row
+        """
+        self.title_bar_button_clicked(3, self.settingsButton)
+        if index != -1:
+            self.settingsCategoriesList.setCurrentRow(index)
 
     def save_settings(self):
         """
