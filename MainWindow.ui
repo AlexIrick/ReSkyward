@@ -203,7 +203,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -248,7 +248,7 @@
                </size>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="bellDisplayPage">
                <property name="sizePolicy">
@@ -485,7 +485,7 @@
                    </spacer>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="pushButton_2">
+                   <widget class="QPushButton" name="settingsBellButton">
                     <property name="font">
                      <font>
                       <family>Poppins</family>
@@ -493,7 +493,7 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>Go to Settings</string>
+                     <string>Set Schedule</string>
                     </property>
                    </widget>
                   </item>
