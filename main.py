@@ -1,7 +1,6 @@
 from dateutil import parser
 import re
 from datetime import datetime, date
-
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
@@ -117,7 +116,7 @@ class UI(QMainWindow):
         # hide experiment
         self.experimentGroup.hide()
         # hide bell
-        self.bellContainer.hide()
+        self.bellStackedWidget.hide()
 
         self.bellRefreshTimer = QTimer()
         self.bellRefreshTimer.setInterval(500)  # .5 seconds
@@ -148,9 +147,9 @@ class UI(QMainWindow):
         """
         Toggles bell schedule view
         """
-        if self.bellContainer.isHidden():
+        if self.bellStackedWidget.isHidden():
             # Show bell container
-            self.bellContainer.show()
+            self.bellStackedWidget.show()
             self.bellToggleButton.setText('')
             self.bellToggleButton.setFont(QFont('Segoe UI', 14))
             Thread(
@@ -161,7 +160,7 @@ class UI(QMainWindow):
             self.bellRefreshTimer.start()
             # self.get_bell_data()
         else:
-            self.bellContainer.hide()
+            self.bellStackedWidget.hide()
             self.bellToggleButton.setText('🔔')
             self.bellToggleButton.setFont(QFont('Poppins', 13))
 
