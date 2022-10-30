@@ -345,7 +345,6 @@ def get_relevant_schedule_info(schedule_data):
         display_data['next_period'] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
         return display_data
 
-    
     now = datetime.now()
     today_schedule = schedule_data['today_schedule']
     # today = schedule_data['today']

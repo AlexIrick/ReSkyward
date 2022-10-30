@@ -1,6 +1,3 @@
-from dateutil import parser
-import re
-from datetime import datetime, date
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
