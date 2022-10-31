@@ -35,20 +35,16 @@ def calculate_grades(class_view_items):
         for weight in value.keys():
             total = sum(all_class_grades[six_week][weight])
             six_week_grade += total / len(all_class_grades[six_week][weight]) * weight
-        class_grade.append(format_round(six_week_grade, max_decimal_places))
+        class_grade.append(round(six_week_grade, max_decimal_places))
         # Calculate semester averages
         if len(class_grade) == 3:
             sem1_grade = sum(class_grade[:3]) / 3
-            class_grade.append(format_round(sem1_grade, max_decimal_places))
+            class_grade.append(round(sem1_grade, max_decimal_places))
         elif len(class_grade) == 7:
             sem2_grade = sum(class_grade[4:7]) / 3
-            class_grade.append(format_round(sem2_grade, max_decimal_places))
+            class_grade.append(round(sem2_grade, max_decimal_places))
         # Calculate final
     return class_grade
-
-
-def format_round(number, decimal_places):
-    return float('{0:.{1}f}'.format(number, decimal_places))
 
 
 def create_assignment_item(weeks_filter):

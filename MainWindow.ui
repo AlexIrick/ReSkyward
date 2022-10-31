@@ -203,7 +203,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -248,7 +248,7 @@
                </size>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="bellDisplayPage">
                <property name="sizePolicy">
@@ -1398,8 +1398,8 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>687</width>
-                       <height>345</height>
+                       <width>118</width>
+                       <height>207</height>
                       </rect>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -1822,7 +1822,7 @@
      <x>0</x>
      <y>0</y>
      <width>999</width>
-     <height>26</height>
+     <height>18</height>
     </rect>
    </property>
   </widget>
