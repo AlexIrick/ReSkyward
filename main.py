@@ -454,13 +454,15 @@ class UI(QMainWindow):
         # set grades, class filter items, and vertical table headers (classes)
         for n, data in enumerate(self.skyward_data):
             # load items
-            table_item, item = skywardview.load_table_item(data, self._class_ids)
+            table_item, item = skywardview.get_class_name_items(data, self._class_ids)
             # add item to table
             self.classesFilter.addItem(item)
+            if n >= self.skywardTable.rowCount():
+                self.skywardTable.insertRow(self.skywardTable.rowCount())
             # add grades to table
             for m, data in enumerate(data['grades']):
                 self.skywardTable.setItem(n, m, skywardview.create_table_item(data, dark_mode))
-            # ser class name vertical header in table
+            # set class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
 
     def title_bar_button_clicked(self, button_index, checked):

@@ -48,7 +48,7 @@ def create_table_item(data, dark_mode):
     return table_item
 
 
-def load_table_item(data, class_ids):
+def get_class_name_items(data, class_ids):
     table_item = QtWidgets.QTableWidgetItem()
     item = QtWidgets.QListWidgetItem()
     if data['class_info']['id'] in class_ids:
