@@ -663,7 +663,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="notLoggedInPage">
                <layout class="QGridLayout" name="gridLayout_9">
@@ -918,7 +918,7 @@
                        </property>
                        <property name="maximumSize">
                         <size>
-                         <width>160</width>
+                         <width>190</width>
                          <height>16777215</height>
                         </size>
                        </property>

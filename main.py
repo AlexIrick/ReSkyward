@@ -73,9 +73,11 @@ class UI(QMainWindow):
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
         # set class tree view column sizes
-        self.classViewTree.header().resizeSection(0, 290)
+        self.classViewTree.header().resizeSection(0, 250)
         self.classViewTree.header().resizeSection(1, 90)
         self.classViewTree.header().resizeSection(3, 90)
+
+        self.experimentTree.header().resizeSection(1, 50)
 
         # set button connections; x = is checked when button is checkable
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
