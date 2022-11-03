@@ -203,7 +203,7 @@
     <item row="1" column="0">
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -1355,7 +1355,7 @@
             <item>
              <widget class="QStackedWidget" name="settingsStackedWidget">
               <property name="currentIndex">
-               <number>0</number>
+               <number>3</number>
               </property>
               <widget class="QWidget" name="loginSettingsPage">
                <layout class="QGridLayout" name="gridLayout_8">
@@ -1708,7 +1708,310 @@
                </layout>
               </widget>
               <widget class="QWidget" name="edugenceSettingsPage"/>
-              <widget class="QWidget" name="bellSettingsPage"/>
+              <widget class="QWidget" name="bellSettingsPage">
+               <layout class="QGridLayout" name="gridLayout_15">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_5">
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayout_12">
+                    <property name="spacing">
+                     <number>2</number>
+                    </property>
+                    <item>
+                     <widget class="QListWidget" name="listWidget">
+                      <property name="font">
+                       <font>
+                        <family>Poppins Medium</family>
+                        <pointsize>9</pointsize>
+                       </font>
+                      </property>
+                      <property name="currentRow">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <property name="text">
+                        <string>Tweak Countdown</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>Change Schedules</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>Change Schools</string>
+                       </property>
+                      </item>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <widget class="Line" name="line_4">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayout_13">
+                    <item>
+                     <widget class="QStackedWidget" name="bellStacked">
+                      <widget class="QWidget" name="bellTweakPage">
+                       <layout class="QGridLayout" name="gridLayout_16">
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                        <item row="0" column="1">
+                         <layout class="QVBoxLayout" name="verticalLayout_14">
+                          <item>
+                           <widget class="QGroupBox" name="groupBox_2">
+                            <property name="title">
+                             <string/>
+                            </property>
+                            <layout class="QVBoxLayout" name="verticalLayout_16">
+                             <item>
+                              <widget class="QLabel" name="label_9">
+                               <property name="font">
+                                <font>
+                                 <family>Poppins Medium</family>
+                                 <pointsize>9</pointsize>
+                                </font>
+                               </property>
+                               <property name="text">
+                                <string>Syncs the bells with your phone</string>
+                               </property>
+                               <property name="alignment">
+                                <set>Qt::AlignCenter</set>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QLabel" name="label_10">
+                               <property name="font">
+                                <font>
+                                 <family>Poppins Medium</family>
+                                 <pointsize>8</pointsize>
+                                </font>
+                               </property>
+                               <property name="text">
+                                <string>Sometimes, the school's bell system is not on satellite time like our phones. This results in an off-sync schedule. Adjust the time up to 60 seconds in either direciton</string>
+                               </property>
+                               <property name="wordWrap">
+                                <bool>true</bool>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QGroupBox" name="groupBox_3">
+                            <property name="title">
+                             <string/>
+                            </property>
+                            <layout class="QVBoxLayout" name="verticalLayout_15">
+                             <property name="spacing">
+                              <number>2</number>
+                             </property>
+                             <property name="leftMargin">
+                              <number>5</number>
+                             </property>
+                             <property name="topMargin">
+                              <number>5</number>
+                             </property>
+                             <property name="rightMargin">
+                              <number>5</number>
+                             </property>
+                             <property name="bottomMargin">
+                              <number>5</number>
+                             </property>
+                             <item>
+                              <layout class="QVBoxLayout" name="verticalLayout_17">
+                               <property name="spacing">
+                                <number>0</number>
+                               </property>
+                               <property name="topMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="bottomMargin">
+                                <number>20</number>
+                               </property>
+                               <item>
+                                <widget class="QLabel" name="label_6">
+                                 <property name="font">
+                                  <font>
+                                   <family>Poppins Medium</family>
+                                   <pointsize>8</pointsize>
+                                  </font>
+                                 </property>
+                                 <property name="text">
+                                  <string>rings</string>
+                                 </property>
+                                 <property name="alignment">
+                                  <set>Qt::AlignCenter</set>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QLabel" name="label_7">
+                                 <property name="font">
+                                  <font>
+                                   <family>Poppins Medium</family>
+                                   <pointsize>9</pointsize>
+                                  </font>
+                                 </property>
+                                 <property name="text">
+                                  <string>0 seconds</string>
+                                 </property>
+                                 <property name="alignment">
+                                  <set>Qt::AlignCenter</set>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QLabel" name="label_8">
+                                 <property name="font">
+                                  <font>
+                                   <family>Poppins Medium</family>
+                                   <pointsize>8</pointsize>
+                                  </font>
+                                 </property>
+                                 <property name="text">
+                                  <string>later</string>
+                                 </property>
+                                 <property name="alignment">
+                                  <set>Qt::AlignCenter</set>
+                                 </property>
+                                </widget>
+                               </item>
+                              </layout>
+                             </item>
+                             <item>
+                              <widget class="QSlider" name="horizontalSlider">
+                               <property name="maximum">
+                                <number>60</number>
+                               </property>
+                               <property name="singleStep">
+                                <number>10</number>
+                               </property>
+                               <property name="pageStep">
+                                <number>2</number>
+                               </property>
+                               <property name="value">
+                                <number>30</number>
+                               </property>
+                               <property name="sliderPosition">
+                                <number>30</number>
+                               </property>
+                               <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                               </property>
+                               <property name="invertedAppearance">
+                                <bool>false</bool>
+                               </property>
+                               <property name="invertedControls">
+                                <bool>false</bool>
+                               </property>
+                               <property name="tickPosition">
+                                <enum>QSlider::NoTicks</enum>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <spacer name="verticalSpacer_9">
+                               <property name="orientation">
+                                <enum>Qt::Vertical</enum>
+                               </property>
+                               <property name="sizeHint" stdset="0">
+                                <size>
+                                 <width>20</width>
+                                 <height>40</height>
+                                </size>
+                               </property>
+                              </spacer>
+                             </item>
+                            </layout>
+                           </widget>
+                          </item>
+                          <item>
+                           <layout class="QHBoxLayout" name="horizontalLayout_14">
+                            <item>
+                             <spacer name="horizontalSpacer_12">
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>40</width>
+                                <height>20</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                            <item>
+                             <widget class="QPushButton" name="pushButton_4">
+                              <property name="font">
+                               <font>
+                                <family>Poppins Medium</family>
+                                <pointsize>9</pointsize>
+                               </font>
+                              </property>
+                              <property name="text">
+                               <string>Reset</string>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </item>
+                          <item>
+                           <spacer name="verticalSpacer_10">
+                            <property name="orientation">
+                             <enum>Qt::Vertical</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                             <size>
+                              <width>20</width>
+                              <height>40</height>
+                             </size>
+                            </property>
+                           </spacer>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="page_2"/>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
              </widget>
             </item>
            </layout>
@@ -1842,6 +2145,22 @@
     <hint type="destinationlabel">
      <x>296</x>
      <y>294</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>listWidget</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>bellStacked</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>430</x>
+     <y>247</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>540</x>
+     <y>123</y>
     </hint>
    </hints>
   </connection>
