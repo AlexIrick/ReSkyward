@@ -337,18 +337,19 @@ def get_relevant_schedule_info(schedule_data):
 
     display_data = {}
     if 'is_school' in schedule_data and not schedule_data['is_school']:
-        next_day = schedule_data['next_school_day']
+        if 'next_school_day' in schedule_data:
+            next_day = schedule_data['next_school_day']
+
+
+            # Show next school day
+            next_day_date = parser.parse(next_day.date)
+            num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th"))
+            next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
+            display_data['next_period'] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
         # If there is no school then update labels accordingly
         display_data['today'] = 'No schedule today!'  # No school today
-
-        # Show next school day
-        next_day_date = parser.parse(next_day.date)
-        num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th"))
-        next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
-
         display_data['current_period'] = 'It looks like there is no schedule today. Enjoy the day off!'
         display_data['time_left'] = ''
-        display_data['next_period'] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
         return display_data
 
     now = datetime.now()
@@ -363,6 +364,7 @@ def get_relevant_schedule_info(schedule_data):
             time_left = str(period.time - now)
             # remove microseconds and leading 0 from hours
             display_data['time_left'] = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]
+
 
             try:
                 display_data['next_period'] = "Next: " + " / ".join(today_schedule[id + 1].names)

@@ -313,7 +313,8 @@ class UI(QMainWindow):
                 self.bellDayLabel.setText(self.bellData['today'].name)
             self.bellCurrentLabel.setText(display_data['current_period'])
             self.bellCountdownLabel.setText(display_data['time_left'])
-            self.bellNextLabel.setText(display_data['next_period'])
+            if 'next_period' in display_data:
+                self.bellNextLabel.setText(display_data['next_period'])
 
     """
     ---Experiment---
