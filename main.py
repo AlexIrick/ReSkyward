@@ -136,7 +136,7 @@ class UI(QMainWindow):
         self.bellStackedWidget.hide()
 
         self.bellRefreshTimer = QTimer()
-        self.bellRefreshTimer.setInterval(500)  # .5 seconds
+        self.bellRefreshTimer.setInterval(1000)  # 1 seconds
         self.bellRefreshTimer.timeout.connect(self.refresh_bell_view)
 
         self.bellDistrictsList.currentRowChanged.connect(self.bell_schedule_changed)
@@ -181,6 +181,7 @@ class UI(QMainWindow):
             self.bellStackedWidget.hide()
             self.bellToggleButton.setText('🔔')
             self.bellToggleButton.setFont(QFont('Poppins', 13))
+            self.bellRefreshTimer.stop()
 
     def bell_toggle(self):
         """
@@ -189,7 +190,7 @@ class UI(QMainWindow):
         self.bell_set_enabled(self.bellStackedWidget.isHidden())
 
     def bell_refresh_start_thread(self):
-        print('timed out')
+        # print('timed out')
         Thread(
             target=self.refresh_bell_view,
             # args=None,
@@ -240,7 +241,6 @@ class UI(QMainWindow):
             self.bell_group_id = None
         self.bell_set_enabled(False)
 
-
     def get_bell_data(self):
         """
         Gets bell schedule data
@@ -252,7 +252,7 @@ class UI(QMainWindow):
             self.bellStackedWidget.setCurrentIndex(1)
             return
         else:
-            self.bellStackedWidget.setCurrentIndex(0)
+            self.bellStackedWidget.setCurrentIndex(2)
         selected_group = self.bell_groups[self.bell_group_id]
 
         rules = BellSchedule.get_rules(self.sess, selected_group, self.bell_schedule)
@@ -301,11 +301,13 @@ class UI(QMainWindow):
             daemon=True
         ).start()
 
-    # def bell_setting_selected(self):
-        # self.bellSettingsList
-
-
     def refresh_bell_view(self):
+        """
+        Refreshes bell page but not if on settings page.
+        Called by QTimer Event
+        """
+        if self.bellStackedWidget.currentIndex() == 1:
+            return
         if display_data := BellSchedule.get_relevant_schedule_info(self.bellData):
             if 'selected_school' in self.bellData:
                 self.bellCountdownGroup.setTitle(self.bellData['selected_school'].name)
@@ -315,6 +317,7 @@ class UI(QMainWindow):
             self.bellCountdownLabel.setText(display_data['time_left'])
             if 'next_period' in display_data:
                 self.bellNextLabel.setText(display_data['next_period'])
+            self.bellStackedWidget.setCurrentIndex(0)
 
     """
     ---Experiment---
