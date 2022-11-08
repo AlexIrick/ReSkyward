@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_7">
+   <layout class="QVBoxLayout" name="verticalLayout_19">
     <property name="leftMargin">
      <number>11</number>
     </property>
@@ -27,7 +27,7 @@
     <property name="bottomMargin">
      <number>11</number>
     </property>
-    <item row="0" column="0">
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QFrame" name="frame">
@@ -200,10 +200,10 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
+    <item>
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -427,90 +427,137 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="4" column="0">
-                 <spacer name="verticalSpacer_8">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
+                <item row="0" column="0">
+                 <widget class="QFrame" name="frame_2">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
                   </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>68</height>
-                   </size>
+                  <property name="frameShadow">
+                   <enum>QFrame::Plain</enum>
                   </property>
-                 </spacer>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="font">
-                   <font>
-                    <family>Poppins</family>
-                    <pointsize>15</pointsize>
-                   </font>
+                  <property name="midLineWidth">
+                   <number>0</number>
                   </property>
-                  <property name="text">
-                   <string>No Schedule Selected</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-                  </property>
+                  <layout class="QGridLayout" name="gridLayout_7">
+                   <item row="7" column="0">
+                    <widget class="QFrame" name="frame_3">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>36</height>
+                      </size>
+                     </property>
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Raised</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_13">
+                     <item>
+                      <spacer name="horizontalSpacer_9">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="settingsBellButton">
+                       <property name="font">
+                        <font>
+                         <family>Poppins</family>
+                         <pointsize>9</pointsize>
+                        </font>
+                       </property>
+                       <property name="text">
+                        <string>Set Schedule</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_10">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="6" column="0">
+                    <spacer name="verticalSpacer_8">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>31</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="2" column="0">
+                    <spacer name="verticalSpacer_7">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>30</width>
+                       <height>67</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_5">
+                     <property name="font">
+                      <font>
+                       <family>Poppins</family>
+                       <pointsize>15</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>No Schedule Selected</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_14">
+                     <property name="font">
+                      <font>
+                       <family>Poppins Medium</family>
+                       <pointsize>13</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Bell Schedule</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </widget>
-                </item>
-                <item row="1" column="0">
-                 <spacer name="verticalSpacer_7">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>30</width>
-                    <height>105</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="3" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_13">
-                  <item>
-                   <spacer name="horizontalSpacer_9">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>40</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="settingsBellButton">
-                    <property name="font">
-                     <font>
-                      <family>Poppins</family>
-                      <pointsize>9</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Set Schedule</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <spacer name="horizontalSpacer_10">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>40</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                 </layout>
                 </item>
                </layout>
               </widget>
@@ -1355,7 +1402,7 @@
             <item>
              <widget class="QStackedWidget" name="settingsStackedWidget">
               <property name="currentIndex">
-               <number>3</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="loginSettingsPage">
                <layout class="QGridLayout" name="gridLayout_8">
@@ -1730,7 +1777,7 @@
                      <number>2</number>
                     </property>
                     <item>
-                     <widget class="QListWidget" name="listWidget">
+                     <widget class="QListWidget" name="bellSettingsList">
                       <property name="font">
                        <font>
                         <family>Poppins Medium</family>
@@ -1747,12 +1794,17 @@
                       </item>
                       <item>
                        <property name="text">
-                        <string>Change Schedules</string>
+                        <string>Change Districts</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
                         <string>Change Schools</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>Change Schedules</string>
                        </property>
                       </item>
                      </widget>
@@ -1770,6 +1822,9 @@
                    <layout class="QVBoxLayout" name="verticalLayout_13">
                     <item>
                      <widget class="QStackedWidget" name="bellStacked">
+                      <property name="currentIndex">
+                       <number>0</number>
+                      </property>
                       <widget class="QWidget" name="bellTweakPage">
                        <layout class="QGridLayout" name="gridLayout_16">
                         <property name="leftMargin">
@@ -2003,7 +2058,84 @@
                         </item>
                        </layout>
                       </widget>
-                      <widget class="QWidget" name="page_2"/>
+                      <widget class="QWidget" name="bellChangeDistrictsPage">
+                       <layout class="QVBoxLayout" name="verticalLayout_20">
+                        <item>
+                         <widget class="QLabel" name="label_12">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                            <pointsize>10</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Select District</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QListWidget" name="bellDistrictsList">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                           </font>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="bellChangeSchoolsPage">
+                       <layout class="QVBoxLayout" name="verticalLayout_21">
+                        <item>
+                         <widget class="QLabel" name="label_13">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                            <pointsize>10</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Select School</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QListWidget" name="bellSchoolsList">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                           </font>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                      <widget class="QWidget" name="bellChangeSchedulesPage">
+                       <layout class="QVBoxLayout" name="verticalLayout_18">
+                        <item>
+                         <widget class="QLabel" name="label_11">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                            <pointsize>10</pointsize>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>Select Schedule</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QListWidget" name="bellGroupsList">
+                          <property name="font">
+                           <font>
+                            <family>Poppins Medium</family>
+                           </font>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
                      </widget>
                     </item>
                    </layout>
@@ -2052,7 +2184,7 @@
       </widget>
      </widget>
     </item>
-    <item row="2" column="0">
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <property name="spacing">
        <number>0</number>
@@ -2149,7 +2281,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>listWidget</sender>
+   <sender>bellSettingsList</sender>
    <signal>currentRowChanged(int)</signal>
    <receiver>bellStacked</receiver>
    <slot>setCurrentIndex(int)</slot>

@@ -1,6 +1,6 @@
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QListWidgetItem
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5 import uic
@@ -43,6 +43,20 @@ class EditableStyledItemDelegate(QtWidgets.QStyledItemDelegate):
 class UI(QMainWindow):
     def __init__(self):
         super(UI, self).__init__()
+        self.current_selected_school = None
+        self.current_selected_district = None
+        self.selected_school = None
+        self.bell_schedule = None
+        self.bell_group_id = None
+        self.bell_groups = None
+        self.bell_school_id = None
+        self.bell_schools = None
+        self.bell_districts = None
+        self.sess = None
+        self.bell_district_id = None
+        self.bell_districts_dict = {}
+        self.bell_schools_dict = {}
+        self.bell_groups_dict = {}
         self.class_assignments = []
         self.assignment_files = None
         self.skyward_data = None
@@ -85,7 +99,7 @@ class UI(QMainWindow):
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
-        self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(3))
+        self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(3, 1))
         self.saveButton.clicked.connect(self.save_settings)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
@@ -125,6 +139,9 @@ class UI(QMainWindow):
         self.bellRefreshTimer.setInterval(500)  # .5 seconds
         self.bellRefreshTimer.timeout.connect(self.refresh_bell_view)
 
+        self.bellDistrictsList.currentRowChanged.connect(self.bell_schedule_changed)
+        self.bellSettingsList.currentRowChanged.connect(self.bell_settings_selected)
+
         self.bellData = {}
 
         # set icons
@@ -147,12 +164,8 @@ class UI(QMainWindow):
     """
     ---Bell scraper---
     """
-
-    def bell_toggle(self):
-        """
-        Toggles bell schedule view
-        """
-        if self.bellStackedWidget.isHidden():
+    def bell_set_enabled(self, should_enable):
+        if should_enable:
             # Show bell container
             self.bellStackedWidget.show()
             self.bellToggleButton.setText('')
@@ -169,6 +182,12 @@ class UI(QMainWindow):
             self.bellToggleButton.setText('🔔')
             self.bellToggleButton.setFont(QFont('Poppins', 13))
 
+    def bell_toggle(self):
+        """
+        Toggles bell schedule view
+        """
+        self.bell_set_enabled(self.bellStackedWidget.isHidden())
+
     def bell_refresh_start_thread(self):
         print('timed out')
         Thread(
@@ -177,11 +196,68 @@ class UI(QMainWindow):
             daemon=True
         ).start()
 
+    def bell_settings_selected(self):
+
+        # Create session
+        if not self.sess:
+            self.sess = BellSchedule.create_session()
+
+        # Get districts
+        if not self.bell_districts:
+            self.bell_districts = BellSchedule.get_districts(self.sess)
+            # Add districts to list view in settings
+            self.show_bell_districts(self.bell_districts)
+        # Get district id
+        if self.bellDistrictsList.currentRow() != -1:
+            self.bell_district_id = self.bell_districts_dict[str(self.bellDistrictsList.currentItem())][0]
+
+        if not self.bell_district_id:
+            return
+        selected_district = self.bell_districts[self.bell_district_id]
+
+        # Get Schools
+        if not self.bell_schools or \
+                (self.current_selected_district is not None and self.current_selected_district != selected_district):
+            self.current_selected_district = selected_district
+            self.bell_schools = BellSchedule.get_schools(self.sess, selected_district)
+            # Add schools to list view in settings
+            self.show_bell_schools(self.bell_schools)
+            self.bell_school_id = None
+        # Get school id
+        if self.bellSchoolsList.currentRow() != -1:
+            self.bell_school_id = self.bell_schools_dict[str(self.bellSchoolsList.currentItem())][0]
+        if not self.bell_school_id:
+            return
+        selected_school = self.bell_schools[self.bell_school_id]
+
+        # Get groups
+        if not self.bell_groups or \
+                (self.current_selected_school is not None and self.current_selected_school != selected_school):
+            self.current_selected_school = selected_school
+            self.bell_groups, self.bell_schedule = BellSchedule.get_groups(self.sess, selected_school)
+            # Add groups to list view in settings
+            self.show_bell_groups(self.bell_groups)
+            self.bell_group_id = None
+        self.bell_set_enabled(False)
+
+
     def get_bell_data(self):
         """
         Gets bell schedule data
         """
-        result = BellSchedule.get_schedule(4, 4, 13)
+        # Get selected group id
+        if self.bellGroupsList.currentRow() != -1:
+            self.bell_group_id = self.bell_groups_dict[str(self.bellGroupsList.currentItem())][0]
+        if not self.bell_group_id:
+            self.bellStackedWidget.setCurrentIndex(1)
+            return
+        else:
+            self.bellStackedWidget.setCurrentIndex(0)
+        selected_group = self.bell_groups[self.bell_group_id]
+
+        rules = BellSchedule.get_rules(self.sess, selected_group, self.bell_schedule)
+        result = BellSchedule.get_schedule(self.sess, self.current_selected_school, rules)
+
         self.bellCountdownGroup.setTitle(result[0]['selected_school'].name)
         self.bellData = result[0]
         if result[1] == "no school":
@@ -191,6 +267,43 @@ class UI(QMainWindow):
             # If today's schedule is empty (holiday)
             self.bellData['is_school'] = False
         self.refresh_bell_view()
+
+    def show_bell_districts(self, districts):
+        for district in districts.items():
+            item = QListWidgetItem()
+            item.setText(district[1].name.strip())
+            self.bell_districts_dict[str(item)] = district
+            self.bellDistrictsList.addItem(item)
+
+    def show_bell_schools(self, schools):
+        self.bell_schools_dict.clear()
+        self.bellSchoolsList.clear()
+        # self.bellSchoolsList.setCurrentRow(-1)
+        for school in schools.items():
+            item = QListWidgetItem()
+            item.setText(school[1].name)
+            self.bell_schools_dict[str(item)] = school
+            self.bellSchoolsList.addItem(item)
+
+    def show_bell_groups(self, groups):
+        self.bell_groups_dict.clear()
+        self.bellGroupsList.clear()
+        for group in groups.items():
+            item = QListWidgetItem()
+            item.setText(group[1].name)
+            self.bell_groups_dict[str(item)] = group
+            self.bellGroupsList.addItem(item)
+
+    def bell_schedule_changed(self):
+        Thread(
+            target=self.get_bell_data,
+            # args=None,
+            daemon=True
+        ).start()
+
+    # def bell_setting_selected(self):
+        # self.bellSettingsList
+
 
     def refresh_bell_view(self):
         if display_data := BellSchedule.get_relevant_schedule_info(self.bellData):
@@ -501,14 +614,19 @@ class UI(QMainWindow):
     """
     ---Settings---
     """
-    def settings_clicked(self, index):
+    def settings_clicked(self, index, bell_index=-1):
         """
         Called when a settings button is clicked. Shows settings page and selects settings category
         :param index: Index of settings category. Set to -1 to not change row
+        :param bell_index: Index of bell settings within settings page.
+        Set to -1 to not change row or if it does not apply
         """
         self.title_bar_button_clicked(3, self.settingsButton.isChecked())
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
+        if bell_index != -1 and self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
+            self.bellSettingsList.setCurrentRow(bell_index)
+
 
     def save_settings(self):
         """

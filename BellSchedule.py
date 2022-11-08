@@ -263,42 +263,47 @@ def exampleRun():
         print(t.move_up(3), end='')
 
 
-def get_schedule(district_id, school_id, group_id):
-    """
-    Gets the schedule data
-    :param district_id: ID of district
-    :param school_id: ID of school
-    :param group_id: ID of group
-    :return: Returns schedule data and string denoting if there is school or not
-    """
-
+def create_session():
     """--- Gathering information ---"""
-    sess = createSession()
-    # Get district
-    districts = BellPopularDistricts(sess).get()
-    selected_district = districts[district_id]
+    return createSession()
+
+
+def get_districts(sess):
+    return BellPopularDistricts(sess).get()  # returns districts
+
+
+def get_schools(sess, selected_district):
     # Get school
-    schools = BellSchoolsPerDistrict(sess).get(district=selected_district)
-    selected_school = schools[school_id]
-    data = {'selected_school': selected_school}
-    
+    return BellSchoolsPerDistrict(sess).get(district=selected_district)  # returns schools
+
+
+def get_groups(sess, selected_school):
     # Get schedule names per school
     schedule = BellSchedulePerSchool(sess).get(school=selected_school)
     schedule[0] = BellSchedule({'id': 0, 'name': 'No School'})
     # Get groups (grade levels) per school
     groups = BellGroupsPerSchool(sess).get(school=selected_school)
-    selected_group = groups[group_id]
-    # Get rules (a/b days) per group
-    rules = BellRulesPerGroup(sess).get(group=selected_group, schedule=schedule)
+    return groups, schedule
 
-    # self.bellCountdownGroup.setTitle(selected_school.name)
+
+def get_rules(sess, selected_group, schedule):
+    # Get rules (a/b days) per group
+    return BellRulesPerGroup(sess).get(group=selected_group, schedule=schedule)  # return rules
+
+
+def get_schedule(sess, selected_school, rules):
+    """
+    Gets the schedule data
+    :return: Returns schedule data and string denoting if there is school or not
+    """
+
+    data = {'selected_school': selected_school}
 
     """--- Show information for today ---"""
     day = str(date.today())
     # day = "2022-11-11"
 
     days = sorted(rules.items())  # Listed days
-
     for listed_day, bell_day in days:
         # If the day is after today and has a schedule
         if listed_day > day and bell_day.schedule:
@@ -313,6 +318,7 @@ def get_schedule(district_id, school_id, group_id):
         return [data, "no school"]
 
     data['today'] = today  # Set today's name (A or B day)
+
 
     # Get today's schedule
     today_schedule = BellDayPerSchedule(sess).get(today.schedule)
@@ -337,7 +343,7 @@ def get_relevant_schedule_info(schedule_data):
 
         # Show next school day
         next_day_date = parser.parse(next_day.date)
-        num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}).get(n % 10, "th")
+        num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th"))
         next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
 
         display_data['current_period'] = 'It looks like there is no schedule today. Enjoy the day off!'
