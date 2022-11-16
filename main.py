@@ -100,7 +100,7 @@ class UI(QMainWindow):
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
         self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(3, 1))
-        self.saveButton.clicked.connect(self.save_settings)
+        self.skywardLoginButton.clicked.connect(self.skyward_login)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
@@ -588,6 +588,10 @@ class UI(QMainWindow):
         Update stacked widget index when a title bar button is clicked
         """
         _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
+
+        if self.tabsStackedWidget.currentIndex() == 3 and button_index != 3:
+            self.save_settings()
+
         if not checked:
             _buttons[button_index].setChecked(True)  # force the button to stay checked
         _buttons.pop(button_index)
@@ -630,8 +634,16 @@ class UI(QMainWindow):
         if bell_index != -1 and self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
 
-
     def save_settings(self):
+        # save to config
+        self.hideCitizen = self.hideCitizenCheck.isChecked()
+        self.settings["skyward"]["hideCitizen"] = self.hideCitizen
+        with open('user/config.json', 'w') as f:
+            json.dump(self.settings, f, indent=4)
+        # load objects
+        self.load_config_objects()
+
+    def skyward_login(self):
         """
         Called when the save button is clicked
         Check if the username and password fields are empty
@@ -644,13 +656,7 @@ class UI(QMainWindow):
         elif self.usernameInput.text() or self.passwordInput.text():
             self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
 
-        # save to config
-        self.hideCitizen = self.hideCitizenCheck.isChecked()
-        self.settings["skyward"]["hideCitizen"] = self.hideCitizen
-        with open('user/config.json', 'w') as f:
-            json.dump(self.settings, f, indent=4)
-        # load objects
-        self.load_config_objects()
+
 
     def load_config(self):
         """
