@@ -76,6 +76,11 @@ class UI(QMainWindow):
         self.settings = {
             "skyward": {
                 "hideCitizen": self.hideCitizenCheck.isChecked(),
+            },
+            "bellSchedule": {
+                "districtID": None,
+                "schoolID": None,
+                "groupID": None,
             }
         }
         self.hideCitizen = False
@@ -197,7 +202,7 @@ class UI(QMainWindow):
             daemon=True
         ).start()
 
-    def bell_settings_selected(self):
+    def bell_settings_selected(self, from_config=False):
 
         # Create session
         if not self.sess:
@@ -209,7 +214,7 @@ class UI(QMainWindow):
             # Add districts to list view in settings
             self.show_bell_districts(self.bell_districts)
         # Get district id
-        if self.bellDistrictsList.currentRow() != -1:
+        if self.bellDistrictsList.currentRow() != -1 and not from_config:
             self.bell_district_id = self.bell_districts_dict[str(self.bellDistrictsList.currentItem())][0]
 
         if not self.bell_district_id:
@@ -223,9 +228,10 @@ class UI(QMainWindow):
             self.bell_schools = BellSchedule.get_schools(self.sess, selected_district)
             # Add schools to list view in settings
             self.show_bell_schools(self.bell_schools)
-            self.bell_school_id = None
+            if not from_config:
+                self.bell_school_id = None
         # Get school id
-        if self.bellSchoolsList.currentRow() != -1:
+        if self.bellSchoolsList.currentRow() != -1 and not from_config:
             self.bell_school_id = self.bell_schools_dict[str(self.bellSchoolsList.currentItem())][0]
         if not self.bell_school_id:
             return
@@ -238,7 +244,8 @@ class UI(QMainWindow):
             self.bell_groups, self.bell_schedule = BellSchedule.get_groups(self.sess, selected_school)
             # Add groups to list view in settings
             self.show_bell_groups(self.bell_groups)
-            self.bell_group_id = None
+            if not from_config:
+                self.bell_group_id = None
         self.bell_set_enabled(False)
 
     def get_bell_data(self):
@@ -637,7 +644,19 @@ class UI(QMainWindow):
     def save_settings(self):
         # save to config
         self.hideCitizen = self.hideCitizenCheck.isChecked()
+        if 'skyward' not in self.settings:
+            self.settings["skyward"] = {}
         self.settings["skyward"]["hideCitizen"] = self.hideCitizen
+        # if self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
+
+        self.bell_settings_selected()
+        self.get_bell_data()
+        if 'bellSchedule' not in self.settings:
+            self.settings["bellSchedule"] = {}
+        self.settings["bellSchedule"]["districtID"] = self.bell_district_id
+        self.settings["bellSchedule"]["schoolID"] = self.bell_school_id
+        self.settings["bellSchedule"]["groupID"] = self.bell_group_id
+
         with open('user/config.json', 'w') as f:
             json.dump(self.settings, f, indent=4)
         # load objects
@@ -656,8 +675,6 @@ class UI(QMainWindow):
         elif self.usernameInput.text() or self.passwordInput.text():
             self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
 
-
-
     def load_config(self):
         """
         Loads saved settings/config
@@ -665,15 +682,33 @@ class UI(QMainWindow):
         if os.path.exists('user/config.json'):
             with open('user/config.json', 'r') as f:
                 self.settings = json.load(f)
-            self.hideCitizen = self.settings["skyward"]["hideCitizen"]
-            self.hideCitizenCheck.setChecked(self.hideCitizen)
+            if "skyward" in self.settings:
+                if 'hideCitizen' in self.settings["skyward"]:
+                    self.hideCitizen = self.settings["skyward"]["hideCitizen"]
+
+            if "bellSchedule" in self.settings:
+                if 'districtID' in self.settings["bellSchedule"]:
+                    self.bell_district_id = self.settings["bellSchedule"]["districtID"]
+                if 'schoolID' in self.settings["bellSchedule"]:
+                    self.bell_school_id = self.settings["bellSchedule"]["schoolID"]
+                if 'groupID' in self.settings["bellSchedule"]:
+                    self.bell_group_id = self.settings["bellSchedule"]["groupID"]
             self.load_config_objects()
+        self.save_settings()
 
     def load_config_objects(self):
         """
         Loads items/objects related to settings
         """
+        self.hideCitizenCheck.setChecked(self.hideCitizen)
         self.hide_skyward_table_columns()
+
+        # self.sess = BellSchedule.create_session()
+        # selected_school = self.bell_schools[self.bell_school_id]
+        # self.bell_groups, self.bell_schedule = BellSchedule.get_groups(self.sess, selected_school)
+
+        self.bell_settings_selected(True)
+        self.get_bell_data()
 
     def login(self, should_refresh=True):
         """
