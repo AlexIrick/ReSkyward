@@ -102,9 +102,10 @@ class UI(QMainWindow):
         self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
+        self.notesButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
-        self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(3, 1))
+        self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(4, 1))
         self.skywardLoginButton.clicked.connect(self.skyward_login)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
@@ -594,9 +595,9 @@ class UI(QMainWindow):
         """
         Update stacked widget index when a title bar button is clicked
         """
-        _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.settingsButton]
+        _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.notesButton, self.settingsButton]
 
-        if self.tabsStackedWidget.currentIndex() == 3 and button_index != 3:
+        if self.tabsStackedWidget.currentIndex() == 4 and button_index != 4:
             self.save_settings()
 
         if not checked:
