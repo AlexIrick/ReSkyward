@@ -18,6 +18,7 @@ import shutil
 import BellSchedule
 import experimentmode
 import skywardview
+import speechrec
 
 version = 'v0.1.0 BETA'
 
@@ -72,6 +73,8 @@ class UI(QMainWindow):
         self.experimentItems = []
         self.classViewItems = []
 
+        self.notesSumText = ''
+
         # create config
         self.settings = {
             "skyward": {
@@ -99,10 +102,10 @@ class UI(QMainWindow):
         self.experimentTree.header().resizeSection(1, 50)
 
         # set button connections; x = is checked when button is checkable
-        self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked(0, x))
-        self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked(1, x))
-        self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked(2, x))
-        self.notesButton.clicked.connect(lambda x: self.title_bar_button_clicked(3, x))
+        self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked('dashboard', x))
+        self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked('skyward', x))
+        self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked('gpa', x))
+        self.notesButton.clicked.connect(lambda x: self.title_bar_button_clicked('notes', x))
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
         self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(4, 1))
@@ -132,6 +135,14 @@ class UI(QMainWindow):
         class_view_delegate = EditableStyledItemDelegate(self.classViewTree)
         class_view_delegate.editFinished.connect(self.display_experiment_grades)
         self.classViewTree.setItemDelegate(class_view_delegate)
+
+        # Summarize note taker
+        self.notesSummarize.clicked.connect(self.summarize_notes)
+        self.notesSumSTT.clicked.connect(self.stt_clicked)
+
+        self.notesSumTimer = QTimer()
+        self.notesSumTimer.setInterval(5000)  # 1 seconds
+        self.notesSumTimer.timeout.connect(self.speech_rec_loop)
 
         # hide filters
         self.classesFilter.hide()
@@ -591,21 +602,30 @@ class UI(QMainWindow):
             # set class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
 
-    def title_bar_button_clicked(self, button_index, checked):
+    def title_bar_button_clicked(self, button_ref, checked):
         """
         Update stacked widget index when a title bar button is clicked
         """
-        _buttons = [self.dashboardButton, self.skywardButton, self.gpaButton, self.notesButton, self.settingsButton]
+        # _buttons = []
+        _buttons = {
+            'dashboard': [self.dashboardButton, 0],
+            'skyward': [self.skywardButton, 1],
+            'gpa': [self.gpaButton, 2],
+            'notes': [self.notesButton, 3],
+            'settings': [self.settingsButton, 4],
+        }
 
-        if self.tabsStackedWidget.currentIndex() == 4 and button_index != 4:
+        # save settings if clicking off of settings tab
+        if self.tabsStackedWidget.currentIndex() == _buttons['settings'][1] and button_ref != 'settings':
             self.save_settings()
 
-        if not checked:
-            _buttons[button_index].setChecked(True)  # force the button to stay checked
-        _buttons.pop(button_index)
-        for b in _buttons:
-            b.setChecked(False)
-        self.tabsStackedWidget.setCurrentIndex(button_index)
+        # Uncheck all buttons
+        for b in _buttons.values():
+            b[0].setChecked(False)
+
+        # Check selected button
+        _buttons[button_ref][0].setChecked(True)  # force the button to stay checked
+        self.tabsStackedWidget.setCurrentIndex(_buttons[button_ref][1])
 
     def run_scraper(self, username, password):
         """
@@ -618,7 +638,7 @@ class UI(QMainWindow):
         except skyward.SkywardLoginFailed:
             self.error_msg_signal.emit('Invalid login. Please try again.')
             self.loginLabel.setText(f'Login failed: {username}')
-            self.title_bar_button_clicked(3, False)
+            self.title_bar_button_clicked('settings', False)
         except requests.exceptions.ConnectionError:
             self.error_msg_signal.emit('Network error. Please check your internet connection.')
         else:
@@ -636,7 +656,7 @@ class UI(QMainWindow):
         :param bell_index: Index of bell settings within settings page.
         Set to -1 to not change row or if it does not apply
         """
-        self.title_bar_button_clicked(3, self.settingsButton.isChecked())
+        self.title_bar_button_clicked('settings', self.settingsButton.isChecked())
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
         if bell_index != -1 and self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
@@ -784,6 +804,25 @@ class UI(QMainWindow):
         self.weeksFilter.hide()
         # self.skywardTable.clear()
 
+    def summarize_notes(self):
+        pass
+
+    def stt_clicked(self):
+        # print('timed out')
+        self.notesSumTimer.start()
+
+    def speech_rec_loop(self):
+        Thread(
+            target=self.speech_rec,
+            # args=None,
+            daemon=True
+        ).start()
+        self.notesSumTextEdit.setPlainText(self.notesSumText)
+
+    def speech_rec(self):
+        if rec := speechrec.start_stt():
+            # print(self.notesSumTextEdit.toPlainText() + rec)
+            self.notesSumText += rec + ' '
 
 def dark_title_bar(hwnd):
     """
