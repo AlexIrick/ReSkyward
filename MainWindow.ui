@@ -1555,6 +1555,9 @@
               <property name="text">
                <string></string>
               </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
@@ -1682,7 +1685,7 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>663</width>
+                       <width>191</width>
                        <height>379</height>
                       </rect>
                      </property>

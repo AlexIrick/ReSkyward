@@ -1,3 +1,6 @@
+import contextlib
+import queue
+
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QListWidgetItem
@@ -74,6 +77,10 @@ class UI(QMainWindow):
         self.classViewItems = []
 
         self.notesSumText = ''
+        self.stt_enabled = False
+        self.srw = speechrec.SpeechRecWhisper()
+        self.stt_thread = None
+        self.stt_thread_exit = False
 
         # create config
         self.settings = {
@@ -141,8 +148,8 @@ class UI(QMainWindow):
         self.notesSumSTT.clicked.connect(self.stt_clicked)
 
         self.notesSumTimer = QTimer()
-        self.notesSumTimer.setInterval(5000)  # 1 seconds
-        self.notesSumTimer.timeout.connect(self.speech_rec_loop)
+        self.notesSumTimer.setInterval(1000)  # 1 seconds
+        self.notesSumTimer.timeout.connect(self.speech_rec_update_text)
 
         # hide filters
         self.classesFilter.hide()
@@ -804,25 +811,41 @@ class UI(QMainWindow):
         self.weeksFilter.hide()
         # self.skywardTable.clear()
 
+    """
+    NOTE SUMMARIZER
+    """
+
     def summarize_notes(self):
         pass
 
     def stt_clicked(self):
+        self.stt_enabled = not self.stt_enabled
         # print('timed out')
-        self.notesSumTimer.start()
+        if self.stt_enabled:
+            self.notesSumText = self.notesSumTextEdit.toPlainText()
+            self.stt_thread_exit = False
+            self.notesSumTimer.start()
+            # Start thread
+            self.stt_thread = Thread(target=self.speech_rec, daemon=True)
+            self.stt_thread.start()
+        elif self.stt_thread is not None and self.stt_thread.is_alive():
+            self.stt_thread_exit = True
+            self.stt_thread.join()
+            self.srw.kill_threads()
+            self.notesSumTimer.stop()
 
-    def speech_rec_loop(self):
-        Thread(
-            target=self.speech_rec,
-            # args=None,
-            daemon=True
-        ).start()
-        self.notesSumTextEdit.setPlainText(self.notesSumText)
+    def speech_rec_update_text(self):
+        if self.notesSumText != self.notesSumTextEdit.toPlainText():
+            self.notesSumTextEdit.setPlainText(self.notesSumText)
 
     def speech_rec(self):
-        if rec := speechrec.start_stt():
-            # print(self.notesSumTextEdit.toPlainText() + rec)
-            self.notesSumText += rec + ' '
+        # Start recording and transcribing threads
+        self.srw.run()
+        while not self.stt_thread_exit:
+            # Get transcribed data
+            with contextlib.suppress(queue.Empty):
+                self.notesSumText += self.srw.get_result_queue().get(timeout=0.5)
+
 
 def dark_title_bar(hwnd):
     """
