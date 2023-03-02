@@ -1291,7 +1291,27 @@
                   </row>
                   <column>
                    <property name="text">
+                    <string>PR1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
                     <string>1st</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>PR2</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ2</string>
                    </property>
                   </column>
                   <column>
@@ -1301,12 +1321,37 @@
                   </column>
                   <column>
                    <property name="text">
+                    <string>PR3</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ3</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
                     <string>3rd</string>
                    </property>
                   </column>
                   <column>
                    <property name="text">
-                    <string>SEM1</string>
+                    <string>EX1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>SM1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>PR4</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ4</string>
                    </property>
                   </column>
                   <column>
@@ -1316,7 +1361,27 @@
                   </column>
                   <column>
                    <property name="text">
+                    <string>PR5</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ5</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
                     <string>5th</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>PR6</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>CZ6</string>
                    </property>
                   </column>
                   <column>
@@ -1326,12 +1391,12 @@
                   </column>
                   <column>
                    <property name="text">
-                    <string>SEM2</string>
+                    <string>EX2</string>
                    </property>
                   </column>
                   <column>
                    <property name="text">
-                    <string>Date</string>
+                    <string>SEM2</string>
                    </property>
                   </column>
                  </widget>

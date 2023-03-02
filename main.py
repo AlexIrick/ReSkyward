@@ -72,7 +72,7 @@ class UI(QMainWindow):
         self.skywardPassword = ''
         self._class_ids = {}
         self.rememberMe = True
-        self.citizenColumns = [1, 4, 7]
+        self.citizenColumns = [1, 4, 7, 12, 15, 18]
         self.experimentItems = []
         self.classViewItems = []
 
@@ -471,7 +471,8 @@ class UI(QMainWindow):
         weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
         for n, h in enumerate(self.headers):
             if weeks_item_index != 0:
-                self.skywardTable.setColumnHidden(n, str(weeks_item_index) not in h['text']
+                # print(weeks_item_index, h['text'])
+                self.skywardTable.setColumnHidden(n, (str(weeks_item_index) not in h['text'])
                                                   or (self.hideCitizen and (n in self.citizenColumns)))
             else:
                 self.skywardTable.setColumnHidden(n, self.hideCitizen and (n in self.citizenColumns))
