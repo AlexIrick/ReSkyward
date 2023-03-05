@@ -903,7 +903,7 @@ if __name__ == "__main__":
     splash.show()
 
     # dark mode pallette
-    if dark_mode := darkdetect.isDark():
+    if dark_mode := (darkdetect.isDark() or True):
         app.setStyle('Fusion')
         dark_palette = QtGui.QPalette()
         dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
@@ -926,7 +926,7 @@ if __name__ == "__main__":
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
 
     # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    qdarktheme.setup_theme()
+
 
     default_settings = {
         "hideCitizen": True,
