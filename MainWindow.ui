@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>975</width>
+    <width>1028</width>
     <height>526</height>
    </rect>
   </property>
@@ -125,6 +125,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="gpaButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -133,7 +139,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>55</width>
+          <width>16777215</width>
           <height>40</height>
          </size>
         </property>
@@ -164,7 +170,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>80</width>
+          <width>16777215</width>
           <height>40</height>
          </size>
         </property>
@@ -698,7 +704,7 @@
               <property name="maximumSize">
                <size>
                 <width>40</width>
-                <height>45</height>
+                <height>40</height>
                </size>
               </property>
               <property name="font">
@@ -1031,13 +1037,13 @@
                     </property>
                     <property name="maximumSize">
                      <size>
-                      <width>28</width>
-                      <height>35</height>
+                      <width>40</width>
+                      <height>40</height>
                      </size>
                     </property>
                     <property name="font">
                      <font>
-                      <family>Poppins</family>
+                      <family>Poppins Medium</family>
                       <pointsize>25</pointsize>
                      </font>
                     </property>
@@ -1063,12 +1069,18 @@
                     <property name="title">
                      <string>Experiment</string>
                     </property>
+                    <property name="flat">
+                     <bool>false</bool>
+                    </property>
+                    <property name="checkable">
+                     <bool>false</bool>
+                    </property>
                     <layout class="QGridLayout" name="gridLayout_11">
                      <property name="leftMargin">
                       <number>7</number>
                      </property>
                      <property name="topMargin">
-                      <number>0</number>
+                      <number>12</number>
                      </property>
                      <property name="rightMargin">
                       <number>7</number>
@@ -1139,22 +1151,24 @@
                       <layout class="QHBoxLayout" name="horizontalLayout_11">
                        <item>
                         <widget class="QPushButton" name="experimentAddButton">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
+                         <property name="minimumSize">
+                          <size>
+                           <width>40</width>
+                           <height>40</height>
+                          </size>
                          </property>
                          <property name="maximumSize">
                           <size>
-                           <width>35</width>
-                           <height>35</height>
+                           <width>40</width>
+                           <height>40</height>
                           </size>
                          </property>
                          <property name="font">
                           <font>
-                           <family>Segoe UI</family>
-                           <pointsize>8</pointsize>
+                           <family>Segoe MDL2 Assets</family>
+                           <pointsize>10</pointsize>
+                           <weight>50</weight>
+                           <bold>false</bold>
                           </font>
                          </property>
                          <property name="text">
@@ -1167,22 +1181,22 @@
                        </item>
                        <item>
                         <widget class="QPushButton" name="experimentRemoveButton">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
+                         <property name="minimumSize">
+                          <size>
+                           <width>40</width>
+                           <height>40</height>
+                          </size>
                          </property>
                          <property name="maximumSize">
                           <size>
-                           <width>35</width>
-                           <height>35</height>
+                           <width>40</width>
+                           <height>40</height>
                           </size>
                          </property>
                          <property name="font">
                           <font>
-                           <family>Segoe UI</family>
-                           <pointsize>11</pointsize>
+                           <family>Segoe MDL2 Assets</family>
+                           <pointsize>12</pointsize>
                           </font>
                          </property>
                          <property name="text">
@@ -1221,7 +1235,14 @@
                   <property name="font">
                    <font>
                     <family>Poppins Medium</family>
+                    <pointsize>9</pointsize>
+                    <weight>7</weight>
+                    <italic>false</italic>
+                    <bold>false</bold>
                    </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">font: 57 9pt &quot;Poppins Medium&quot;;</string>
                   </property>
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -1259,9 +1280,26 @@
                   <attribute name="horizontalHeaderDefaultSectionSize">
                    <number>56</number>
                   </attribute>
+                  <attribute name="verticalHeaderCascadingSectionResizes">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderMinimumSectionSize">
+                   <number>30</number>
+                  </attribute>
+                  <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderStretchLastSection">
+                   <bool>false</bool>
+                  </attribute>
                   <row>
                    <property name="text">
                     <string>English</string>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <family>Poppins Medium</family>
+                    </font>
                    </property>
                   </row>
                   <row>
@@ -1292,6 +1330,11 @@
                   <column>
                    <property name="text">
                     <string>PR1</string>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <family>Poppins Medium</family>
+                    </font>
                    </property>
                   </column>
                   <column>
@@ -1399,6 +1442,16 @@
                     <string>SEM2</string>
                    </property>
                   </column>
+                  <item row="0" column="0">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <family>Poppins Medium</family>
+                    </font>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                </layout>
@@ -1750,8 +1803,8 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>191</width>
-                       <height>379</height>
+                       <width>716</width>
+                       <height>388</height>
                       </rect>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -1775,7 +1828,7 @@
                        <widget class="QGroupBox" name="loginGroupBox">
                         <property name="font">
                          <font>
-                          <family>Poppins</family>
+                          <family>Poppins Medium</family>
                           <pointsize>9</pointsize>
                          </font>
                         </property>
@@ -1787,7 +1840,7 @@
                           <number>11</number>
                          </property>
                          <property name="topMargin">
-                          <number>1</number>
+                          <number>10</number>
                          </property>
                          <property name="rightMargin">
                           <number>1</number>
@@ -1917,6 +1970,7 @@
                             <widget class="QPushButton" name="skywardLoginButton">
                              <property name="font">
                               <font>
+                               <family>Poppins Medium</family>
                                <pointsize>8</pointsize>
                               </font>
                              </property>
@@ -2560,7 +2614,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>975</width>
+     <width>1028</width>
      <height>26</height>
     </rect>
    </property>

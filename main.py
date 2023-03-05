@@ -1,6 +1,7 @@
 import contextlib
 import queue
 
+import qdarktheme
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QListWidgetItem
@@ -22,6 +23,8 @@ import BellSchedule
 import experimentmode
 import skywardview
 import speechrec
+
+# import qdarkstyle
 
 version = 'v0.1.0 BETA'
 
@@ -193,7 +196,7 @@ class UI(QMainWindow):
             # Show bell container
             self.bellStackedWidget.show()
             self.bellToggleButton.setText('')
-            self.bellToggleButton.setFont(QFont('Segoe UI', 14))
+            self.bellToggleButton.setFont(QFont('Segoe MDL2 Assets', 14))
             Thread(
                 target=self.get_bell_data,
                 # args=None,
@@ -356,7 +359,7 @@ class UI(QMainWindow):
             # Enable experiment
             self.experimentGroup.show()
             self.experimentButton.setText('')
-            self.experimentButton.setFont(QFont('Segoe UI', 14))
+            self.experimentButton.setFont(QFont('Segoe MDL2 Assets', 14))
             self.classViewTree.header().hideSection(2)
             # Generate experiment
             if len(self.experimentItems) == 0:
@@ -921,6 +924,9 @@ if __name__ == "__main__":
 
     # Apply custom fonts
     [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
+
+    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    qdarktheme.setup_theme()
 
     default_settings = {
         "hideCitizen": True,
