@@ -1,7 +1,7 @@
 import contextlib
 import queue
 
-import qdarktheme
+# import qdarktheme
 from Crypto.Random import get_random_bytes
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QListWidgetItem
@@ -23,6 +23,7 @@ import BellSchedule
 import experimentmode
 import skywardview
 import speechrec
+# from qt_material import list_themes, apply_stylesheet
 
 # import qdarkstyle
 
@@ -902,7 +903,7 @@ if __name__ == "__main__":
     splash = QtWidgets.QSplashScreen(splash_icon, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
 
-    # dark mode pallette
+    # dark mode palette
     if dark_mode := (darkdetect.isDark() or True):
         app.setStyle('Fusion')
         dark_palette = QtGui.QPalette()
@@ -934,6 +935,8 @@ if __name__ == "__main__":
 
     # Create window
     MainWindow = QtWidgets.QMainWindow()
+
+    # apply_stylesheet(app, theme='dark_cyan.xml')
 
     window = UI()
     app.exec_()

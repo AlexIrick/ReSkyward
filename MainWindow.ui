@@ -30,24 +30,15 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QFrame" name="frame">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="QLabel" name="label_18">
         <property name="minimumSize">
          <size>
           <width>40</width>
           <height>40</height>
          </size>
         </property>
-        <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>
@@ -800,7 +791,7 @@
                <enum>QFrame::Plain</enum>
               </property>
               <property name="lineWidth">
-               <number>1</number>
+               <number>0</number>
               </property>
               <property name="horizontalScrollBarPolicy">
                <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -1803,7 +1794,7 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>716</width>
+                       <width>191</width>
                        <height>388</height>
                       </rect>
                      </property>
