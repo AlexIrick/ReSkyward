@@ -5,6 +5,8 @@ from titlecase import titlecase
 from datetime import datetime
 import os
 
+import sqlgrades
+
 
 class ParseData:
     def __init__(self, soup, data):
@@ -78,16 +80,20 @@ class ParseData:
                 })
         return rows
 
-    def grid_object_to_grid(self, table):
+    def grid_object_to_grid(self, table, db):
         tab_dict = []
         tab_dict.extend(self.handle_tb(table['th']['r'], th_only=True))
         tab_dict.extend(self.handle_tb(table['tb']['r']))
         # remove dropped classes
         tab_dict = [k for k in tab_dict if not(k.get('class_info') and k['class_info'].get('dropped'))]
-        for j, class_ in enumerate(tab_dict): # for every class
+        for j, class_ in enumerate(tab_dict):  # for every class
             if "headers" in class_:
                 continue
             file_name = 'data/'+re.sub(r'[\W_]+', '-', class_['class_info']['class'].lower())+'.json'
+            # print('class: ' + str(class_['assignments']))
+            # db.create_class_table(file_name)
+            # db.insert_list_into_table(file_name, class_['assignments'])
+            # db.commit()
             with open(file_name, 'w') as f:
                 json.dump(class_['assignments'], f, indent=4)
             tab_dict[j]['assignments'] = file_name
@@ -96,7 +102,8 @@ class ParseData:
     def run(self):
         if not os.path.exists('data'):
             os.mkdir('data')
-        tables = [self.grid_object_to_grid(table) for table in self.data.values()]
+        grades_db = sqlgrades.GradesDatabase('grades.db')
+        tables = [self.grid_object_to_grid(table, grades_db) for table in self.data.values()]
         with open('data/SkywardExport.json', 'w') as f:
             json.dump(tables, f, indent=4)
         print('Done!')

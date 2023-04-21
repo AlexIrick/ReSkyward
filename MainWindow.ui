@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1028</width>
+    <width>953</width>
     <height>526</height>
    </rect>
   </property>
@@ -1630,6 +1630,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
              <widget class="QPushButton" name="notesSummarize">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="font">
                <font>
                 <family>Poppins Medium</family>
@@ -2605,7 +2608,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1028</width>
+     <width>953</width>
      <height>26</height>
     </rect>
    </property>

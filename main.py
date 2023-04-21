@@ -568,7 +568,9 @@ class UI(QMainWindow):
         # Get assignments
         for file_dir in self.assignment_files:
             with open(file_dir) as f:
-                self.class_assignments.append(json.load(f))
+                load = json.load(f)
+                self.class_assignments.append(load)
+                # print([file_dir, load])
         # Get the last updated date of the data
         with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
