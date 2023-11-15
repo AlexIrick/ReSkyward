@@ -81,10 +81,6 @@ class UI(QMainWindow):
         self.classViewItems = []
 
         self.notesSumText = ''
-        self.stt_enabled = False
-        self.srw = speechrec.SpeechRecWhisper()
-        self.stt_thread = None
-        self.stt_thread_exit = False
 
         # create config
         self.settings = {
@@ -120,7 +116,7 @@ class UI(QMainWindow):
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
         self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(4, 1))
-        self.skywardLoginButton.clicked.connect(self.skyward_login)
+        self.skywardLoginButton.clicked.connect(self.login_button_pressed)
         self.refreshButton.clicked.connect(self.refresh_database)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
@@ -149,11 +145,6 @@ class UI(QMainWindow):
 
         # Summarize note taker
         self.notesSummarize.clicked.connect(self.summarize_notes)
-        self.notesSumSTT.clicked.connect(self.stt_clicked)
-
-        self.notesSumTimer = QTimer()
-        self.notesSumTimer.setInterval(1000)  # 1 seconds
-        self.notesSumTimer.timeout.connect(self.speech_rec_update_text)
 
         # hide filters
         self.classesFilter.hide()
@@ -176,12 +167,17 @@ class UI(QMainWindow):
         # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
 
         # set dark title bar
-        username = get_user_info()[0]
-        self.loginLabel.setText(f'Logged in as {username}')
-        self.helloUserLabel.setText(f'Hello {username}!')
+        # username = get_user_info()[0]
+        self.loginLabel.setText(f'Logged in as {self.skywardUsername}')
+        self.helloUserLabel.setText(f'Hello {self.skywardUsername}!')
 
         dark_title_bar(int(self.winId()))
-        self.load_skyward()
+
+        # Create user folder if needed
+        if not os.path.exists('user'):
+            os.mkdir('user')
+
+        self.logged_in = self.load_skyward(True)
         self.load_config()
         splash.hide()
         self.show()
@@ -555,7 +551,7 @@ class UI(QMainWindow):
         # Return error in status bar if no data already exists
         if not os.path.exists('data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
-            return
+            return False
         # Load data from file
         with open('data/SkywardExport.json') as f:
             skyward_data = json.load(f)  # read data
@@ -581,7 +577,7 @@ class UI(QMainWindow):
         Update the Skyward table UI with the data from the database
         """
         if reload and not self.load_skyward_data():
-            return  # if reload was requested, and failed, return
+            return False # if reload was requested, and failed, return
         self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table
         # show filters
         self.classesFilter.show()
@@ -615,6 +611,8 @@ class UI(QMainWindow):
                 self.skywardTable.setItem(n, m, skywardview.create_table_item(data, dark_mode))
             # set class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
+
+        return True
 
     def title_bar_button_clicked(self, button_ref, checked):
         """
@@ -697,16 +695,17 @@ class UI(QMainWindow):
         # load objects
         self.load_config_objects()
 
-    def skyward_login(self):
+    def login_button_pressed(self):
         """
         Called when the save button is clicked
         Check if the username and password fields are empty
         """
-        # Create user folder if needed
-        if not os.path.exists('user'):
-            os.mkdir('user')
         if self.usernameInput.text() and self.passwordInput.text():
-            self.login()
+            self.skywardUsername = self.usernameInput.text()
+            self.skywardPassword = self.passwordInput.text()
+            self.login_skyward()
+            self.usernameInput.clear()
+            self.passwordInput.clear()
         elif self.usernameInput.text() or self.passwordInput.text():
             self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
 
@@ -729,14 +728,15 @@ class UI(QMainWindow):
                 if 'groupID' in self.settings["bellSchedule"]:
                     self.bell_group_id = self.settings["bellSchedule"]["groupID"]
             self.load_config_objects()
-        self.save_settings()
+            self.save_settings()
 
     def load_config_objects(self):
         """
         Loads items/objects related to settings
         """
-        self.hideCitizenCheck.setChecked(self.hideCitizen)
-        self.hide_skyward_table_columns()
+        if self.logged_in:
+            self.hideCitizenCheck.setChecked(self.hideCitizen)
+            self.hide_skyward_table_columns()
 
         # self.sess = BellSchedule.create_session()
         # selected_school = self.bell_schools[self.bell_school_id]
@@ -745,13 +745,10 @@ class UI(QMainWindow):
         self.bell_settings_selected(True)
         self.get_bell_data()
 
-    def login(self, should_refresh=True):
+    def login_skyward(self, should_refresh=True):
         """
         Saves the username and password as encrypted binary
         """
-        print('saving')
-        self.skywardUsername = self.usernameInput.text()
-        self.skywardPassword = self.passwordInput.text()
 
         # Checks if key has already been generated
         if not os.path.exists('user/aes.bin'):
@@ -779,8 +776,7 @@ class UI(QMainWindow):
         # refreshes database
         if should_refresh:
             self.refresh_database()
-        self.usernameInput.clear()
-        self.passwordInput.clear()
+
 
     def refresh_database(self):
         """
@@ -788,14 +784,17 @@ class UI(QMainWindow):
         """
         if self.loginRememberCheck.isChecked():
             data = get_user_info()
-            # set text for refresh label
-            self.lastRefreshedLabel.setText('Refreshing...')
-            # run scraper as thread: inputs user login
-            Thread(
-                target=self.run_scraper,
-                args=data,
-                daemon=True
-            ).start()
+            if data:
+                # set text for refresh label
+                self.lastRefreshedLabel.setText('Refreshing...')
+                # run scraper as thread: inputs user login
+                Thread(
+                    target=self.run_scraper,
+                    args=data,
+                    daemon=True
+                ).start()
+            else:
+                self.settings_clicked(0)
         else:
             # set text for refresh label
             self.lastRefreshedLabel.setText('Refreshing...')
@@ -824,34 +823,6 @@ class UI(QMainWindow):
 
     def summarize_notes(self):
         pass
-
-    def stt_clicked(self):
-        self.stt_enabled = not self.stt_enabled
-        # print('timed out')
-        if self.stt_enabled:
-            self.notesSumText = self.notesSumTextEdit.toPlainText()
-            self.stt_thread_exit = False
-            self.notesSumTimer.start()
-            # Start thread
-            self.stt_thread = Thread(target=self.speech_rec, daemon=True)
-            self.stt_thread.start()
-        elif self.stt_thread is not None and self.stt_thread.is_alive():
-            self.stt_thread_exit = True
-            self.stt_thread.join()
-            self.srw.kill_threads()
-            self.notesSumTimer.stop()
-
-    def speech_rec_update_text(self):
-        if self.notesSumText != self.notesSumTextEdit.toPlainText():
-            self.notesSumTextEdit.setPlainText(self.notesSumText)
-
-    def speech_rec(self):
-        # Start recording and transcribing threads
-        self.srw.run()
-        while not self.stt_thread_exit:
-            # Get transcribed data
-            with contextlib.suppress(queue.Empty):
-                self.notesSumText += self.srw.get_result_queue().get(timeout=0.5)
 
 
 def dark_title_bar(hwnd):
@@ -883,11 +854,20 @@ def format_round(number, decimal_places):
 
 def get_user_info():
     # reads key from file
-    with open("user/aes.bin", "rb") as file_in:
-        key = file_in.read()
-    # reads encrypted user info from file
-    with open("user/encrypted.bin", "rb") as file_in:
-        nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+    if os.path.exists('user/aes.bin'):
+        with open("user/aes.bin", "rb") as file_in:
+            key = file_in.read()
+    else:
+        return False
+
+    if os.path.exists('user/encrypted.bin'):
+        # reads encrypted user info from file
+        with open("user/encrypted.bin", "rb") as file_in:
+            nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+    else:
+        return False
+
+
     # generate cypher from key
     cipher = AES.new(key, AES.MODE_EAX, nonce)
     # decrypts user login
