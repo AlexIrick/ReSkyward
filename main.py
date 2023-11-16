@@ -577,7 +577,7 @@ class UI(QMainWindow):
         Update the Skyward table UI with the data from the database
         """
         if reload and not self.load_skyward_data():
-            return False # if reload was requested, and failed, return
+            return False  # if reload was requested, and failed, return
         self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table
         # show filters
         self.classesFilter.show()
@@ -703,9 +703,16 @@ class UI(QMainWindow):
         if self.usernameInput.text() and self.passwordInput.text():
             self.skywardUsername = self.usernameInput.text()
             self.skywardPassword = self.passwordInput.text()
-            self.login_skyward()
             self.usernameInput.clear()
             self.passwordInput.clear()
+
+            # TODO: ONLY SAVE LOGIN IF REFRESH IS SUCCESSFUL
+            # refreshes database
+            self.refresh_database()
+
+            self.save_login()
+
+
         elif self.usernameInput.text() or self.passwordInput.text():
             self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
 
@@ -745,7 +752,7 @@ class UI(QMainWindow):
         self.bell_settings_selected(True)
         self.get_bell_data()
 
-    def login_skyward(self, should_refresh=True):
+    def save_login(self):
         """
         Saves the username and password as encrypted binary
         """
@@ -773,9 +780,6 @@ class UI(QMainWindow):
         else:
             # clears user info file
             open("user/encrypted.bin", "wb").close()
-        # refreshes database
-        if should_refresh:
-            self.refresh_database()
 
 
     def refresh_database(self):
