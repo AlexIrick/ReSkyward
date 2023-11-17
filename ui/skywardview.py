@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTreeWidgetItem
 
 
@@ -72,5 +72,7 @@ def hide_items_by_six_weeks(items_list, week_filter_text):
     :return: Filtered items list
     """
     for item in items_list:
-        item.setHidden(week_filter_text.lower() != 'all' and item.text(3) != week_filter_text.lower())
+        item.setHidden(
+            week_filter_text.lower() != 'all' and item.text(3) != week_filter_text.lower()
+        )
     return items_list

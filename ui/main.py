@@ -1,31 +1,32 @@
 import contextlib
+import ctypes as ct
+import json
+import os
 import queue
+import shutil
+import sys
+from itertools import chain
+from os.path import dirname, join
+from threading import Thread
+
+import darkdetect
+import requests.exceptions
+from Crypto.Cipher import AES
 
 # import qdarktheme
 from Crypto.Random import get_random_bytes
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QListWidgetItem
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal, QTimer
-from PyQt5 import uic
-import sys, os
-from glob import glob
-import json
-from threading import Thread
-from itertools import chain
-from Crypto.Cipher import AES
-import skyward
-import requests.exceptions
-import darkdetect
-import ctypes as ct
-import shutil
-import BellSchedule
-import experimentmode
-import skywardview
-import speechrec
+from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
+
+from ReSkyward.mixin import *
+from ReSkyward.scr import BellSchedule, skyward
+
+from . import experimentmode, skywardview
+
 # from qt_material import list_themes, apply_stylesheet
 
-# import qdarkstyle
 
 version = 'v0.1.0 BETA'
 
@@ -49,6 +50,8 @@ class EditableStyledItemDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class UI(QMainWindow):
+    DARK_MODE = darkdetect.isDark()
+
     def __init__(self):
         super(UI, self).__init__()
         self.current_selected_school = None
@@ -68,9 +71,9 @@ class UI(QMainWindow):
         self.class_assignments = []
         self.assignment_files = None
         self.skyward_data = None
-        uic.loadUi("MainWindow.ui", self)
+        uic.loadUi(join(dirname(__file__), "MainWindow.ui"), self)
         self.setWindowTitle(f'ReSkyward - {version}')
-        self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
+        self.setWindowIcon(QtGui.QIcon(WINDOW_ICON))
         # set variables
         self.skywardUsername = ''
         self.skywardPassword = ''
@@ -91,14 +94,16 @@ class UI(QMainWindow):
                 "districtID": None,
                 "schoolID": None,
                 "groupID": None,
-            }
+            },
         }
         self.hideCitizen = False
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
         self.weeksFilter.setFixedWidth(
-            (self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count() + 2 * self.weeksFilter.frameWidth())
+            (self.weeksFilter.sizeHintForRow(0) + 13) * self.weeksFilter.count()
+            + 2 * self.weeksFilter.frameWidth()
+        )
         self.weeksFilter.setFixedHeight(45)
         self.weeksFilterFrame.setBackgroundRole(QtGui.QPalette.Base)
         # set class tree view column sizes
@@ -109,7 +114,9 @@ class UI(QMainWindow):
         self.experimentTree.header().resizeSection(1, 50)
 
         # set button connections; x = is checked when button is checkable
-        self.dashboardButton.clicked.connect(lambda x: self.title_bar_button_clicked('dashboard', x))
+        self.dashboardButton.clicked.connect(
+            lambda x: self.title_bar_button_clicked('dashboard', x)
+        )
         self.skywardButton.clicked.connect(lambda x: self.title_bar_button_clicked('skyward', x))
         self.gpaButton.clicked.connect(lambda x: self.title_bar_button_clicked('gpa', x))
         self.notesButton.clicked.connect(lambda x: self.title_bar_button_clicked('notes', x))
@@ -179,8 +186,6 @@ class UI(QMainWindow):
 
         self.logged_in = self.load_skyward(True)
         self.load_config()
-        splash.hide()
-        self.show()
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
@@ -188,6 +193,7 @@ class UI(QMainWindow):
     """
     ---Bell scraper---
     """
+
     def bell_set_enabled(self, should_enable):
         if should_enable:
             # Show bell container
@@ -197,7 +203,7 @@ class UI(QMainWindow):
             Thread(
                 target=self.get_bell_data,
                 # args=None,
-                daemon=True
+                daemon=True,
             ).start()
             self.bellRefreshTimer.start()
             # self.get_bell_data()
@@ -218,11 +224,10 @@ class UI(QMainWindow):
         Thread(
             target=self.refresh_bell_view,
             # args=None,
-            daemon=True
+            daemon=True,
         ).start()
 
     def bell_settings_selected(self, from_config=False):
-
         # Create session
         if not self.sess:
             self.sess = BellSchedule.create_session()
@@ -234,15 +239,19 @@ class UI(QMainWindow):
             self.show_bell_districts(self.bell_districts)
         # Get district id
         if self.bellDistrictsList.currentRow() != -1 and not from_config:
-            self.bell_district_id = self.bell_districts_dict[str(self.bellDistrictsList.currentItem())][0]
+            self.bell_district_id = self.bell_districts_dict[
+                str(self.bellDistrictsList.currentItem())
+            ][0]
 
         if not self.bell_district_id:
             return
         selected_district = self.bell_districts[self.bell_district_id]
 
         # Get Schools
-        if not self.bell_schools or \
-                (self.current_selected_district is not None and self.current_selected_district != selected_district):
+        if not self.bell_schools or (
+            self.current_selected_district is not None
+            and self.current_selected_district != selected_district
+        ):
             self.current_selected_district = selected_district
             self.bell_schools = BellSchedule.get_schools(self.sess, selected_district)
             # Add schools to list view in settings
@@ -257,10 +266,14 @@ class UI(QMainWindow):
         selected_school = self.bell_schools[self.bell_school_id]
 
         # Get groups
-        if not self.bell_groups or \
-                (self.current_selected_school is not None and self.current_selected_school != selected_school):
+        if not self.bell_groups or (
+            self.current_selected_school is not None
+            and self.current_selected_school != selected_school
+        ):
             self.current_selected_school = selected_school
-            self.bell_groups, self.bell_schedule = BellSchedule.get_groups(self.sess, selected_school)
+            self.bell_groups, self.bell_schedule = BellSchedule.get_groups(
+                self.sess, selected_school
+            )
             # Add groups to list view in settings
             self.show_bell_groups(self.bell_groups)
             if not from_config:
@@ -324,7 +337,7 @@ class UI(QMainWindow):
         Thread(
             target=self.get_bell_data,
             # args=None,
-            daemon=True
+            daemon=True,
         ).start()
 
     def refresh_bell_view(self):
@@ -377,8 +390,11 @@ class UI(QMainWindow):
             # for item in self.classViewItems:
             #     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
             classes_item_index = self.get_selected_filter_index(self.classesFilter)
-            self.load_class_view(self.class_assignments[classes_item_index - 1], self.weeksFilter.currentItem().text(),
-                                 True)
+            self.load_class_view(
+                self.class_assignments[classes_item_index - 1],
+                self.weeksFilter.currentItem().text(),
+                True,
+            )
 
     def experiment_calculate_grades(self):
         """
@@ -450,12 +466,18 @@ class UI(QMainWindow):
             self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
             if filter_type == 'class':
                 # load the tree view
-                self.load_class_view(self.class_assignments[classes_item_index - 1],
-                                     self.weeksFilter.currentItem().text(), True)
+                self.load_class_view(
+                    self.class_assignments[classes_item_index - 1],
+                    self.weeksFilter.currentItem().text(),
+                    True,
+                )
             elif filter_type == 'week':
                 # load the tree view
-                self.load_class_view(self.class_assignments[classes_item_index - 1],
-                                     self.weeksFilter.currentItem().text(), not self.classViewItems)
+                self.load_class_view(
+                    self.class_assignments[classes_item_index - 1],
+                    self.weeksFilter.currentItem().text(),
+                    not self.classViewItems,
+                )
 
         # Hide skyward table columns according to filters
         self.hide_skyward_table_columns()
@@ -472,10 +494,15 @@ class UI(QMainWindow):
         for n, h in enumerate(self.headers):
             if weeks_item_index != 0:
                 # print(weeks_item_index, h['text'])
-                self.skywardTable.setColumnHidden(n, (str(weeks_item_index) not in h['text'])
-                                                  or (self.hideCitizen and (n in self.citizenColumns)))
+                self.skywardTable.setColumnHidden(
+                    n,
+                    (str(weeks_item_index) not in h['text'])
+                    or (self.hideCitizen and (n in self.citizenColumns)),
+                )
             else:
-                self.skywardTable.setColumnHidden(n, self.hideCitizen and (n in self.citizenColumns))
+                self.skywardTable.setColumnHidden(
+                    n, self.hideCitizen and (n in self.citizenColumns)
+                )
 
     def load_class_view(self, assignments, week_filter, should_regen):
         """
@@ -531,7 +558,9 @@ class UI(QMainWindow):
         self.lastRefreshedLabel.setText(msg)
         self.message_box('ReSkyward - Error', msg)
 
-    def message_box(self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok):
+    def message_box(
+        self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok
+    ):
         """
         Displays a message box with the given title, text, icon, and buttons
         Needed to set the title bar color of the error message window
@@ -558,7 +587,8 @@ class UI(QMainWindow):
         # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
         self.headers = skyward_data[0][0]['headers'][1:]
         self.skyward_data = list(
-            chain.from_iterable([x[1:] for x in skyward_data]))  # merge all classes together, skipping headers
+            chain.from_iterable([x[1:] for x in skyward_data])
+        )  # merge all classes together, skipping headers
         # Get assignment files directories
         self.assignment_files = [x['assignments'] for x in self.skyward_data]
         # Get assignments
@@ -596,7 +626,9 @@ class UI(QMainWindow):
         # set horizontal table headers (grading periods)
         for n, data in enumerate(self.headers):
             # add text to table header
-            self.skywardTable.setHorizontalHeaderItem(n, skywardview.create_table_item(data, dark_mode))
+            self.skywardTable.setHorizontalHeaderItem(
+                n, skywardview.create_table_item(data, UI.DARK_MODE)
+            )
 
         # set grades, class filter items, and vertical table headers (classes)
         for n, data in enumerate(self.skyward_data):
@@ -608,7 +640,7 @@ class UI(QMainWindow):
                 self.skywardTable.insertRow(self.skywardTable.rowCount())
             # add grades to table
             for m, data in enumerate(data['grades']):
-                self.skywardTable.setItem(n, m, skywardview.create_table_item(data, dark_mode))
+                self.skywardTable.setItem(n, m, skywardview.create_table_item(data, UI.DARK_MODE))
             # set class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
 
@@ -628,7 +660,10 @@ class UI(QMainWindow):
         }
 
         # save settings if clicking off of settings tab
-        if self.tabsStackedWidget.currentIndex() == _buttons['settings'][1] and button_ref != 'settings':
+        if (
+            self.tabsStackedWidget.currentIndex() == _buttons['settings'][1]
+            and button_ref != 'settings'
+        ):
             self.save_settings()
 
         # Uncheck all buttons
@@ -661,6 +696,7 @@ class UI(QMainWindow):
     """
     ---Settings---
     """
+
     def settings_clicked(self, index, bell_index=-1):
         """
         Called when a settings button is clicked. Shows settings page and selects settings category
@@ -671,7 +707,9 @@ class UI(QMainWindow):
         self.title_bar_button_clicked('settings', self.settingsButton.isChecked())
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
-        if bell_index != -1 and self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
+        if (
+            bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
+        ):  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
 
     def save_settings(self):
@@ -712,9 +750,10 @@ class UI(QMainWindow):
 
             self.save_login()
 
-
         elif self.usernameInput.text() or self.passwordInput.text():
-            self.message_box('ReSkyward - Input Error', 'Please enter both a username and password.')
+            self.message_box(
+                'ReSkyward - Input Error', 'Please enter both a username and password.'
+            )
 
     def load_config(self):
         """
@@ -781,7 +820,6 @@ class UI(QMainWindow):
             # clears user info file
             open("user/encrypted.bin", "wb").close()
 
-
     def refresh_database(self):
         """
         Get password and decrypt
@@ -792,11 +830,7 @@ class UI(QMainWindow):
                 # set text for refresh label
                 self.lastRefreshedLabel.setText('Refreshing...')
                 # run scraper as thread: inputs user login
-                Thread(
-                    target=self.run_scraper,
-                    args=data,
-                    daemon=True
-                ).start()
+                Thread(target=self.run_scraper, args=data, daemon=True).start()
             else:
                 self.settings_clicked(0)
         else:
@@ -806,7 +840,7 @@ class UI(QMainWindow):
             Thread(
                 target=self.run_scraper,
                 args=[self.skywardUsername, self.skywardPassword],
-                daemon=True
+                daemon=True,
             ).start()
 
     def clear_all_user_data(self):
@@ -835,7 +869,11 @@ def dark_title_bar(hwnd):
     Windows 11: Sets color RGB (28, 38, 48)
     Windows 10: Sets color to black
     """
-    if not (dark_mode and sys.platform == 'win32' and (version_num := sys.getwindowsversion()).major == 10):
+    if not (
+        UI.DARK_MODE
+        and sys.platform == 'win32'
+        and (version_num := sys.getwindowsversion()).major == 10
+    ):
         return
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
     if version_num.build >= 22000:  # windows 11
@@ -845,11 +883,6 @@ def dark_title_bar(hwnd):
         rendering_policy = 19 if version_num.build < 19041 else 20  # 19 before 20h1
         value = ct.c_int(True)
         set_window_attribute(hwnd, rendering_policy, ct.byref(value), ct.sizeof(value))
-
-
-def delete_folder(folder_name):
-    if os.path.exists(folder_name):
-        shutil.rmtree(folder_name)
 
 
 def format_round(number, decimal_places):
@@ -871,63 +904,7 @@ def get_user_info():
     else:
         return False
 
-
     # generate cypher from key
     cipher = AES.new(key, AES.MODE_EAX, nonce)
     # decrypts user login
     return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
-
-
-if __name__ == "__main__":
-    # initialize app
-    app = QApplication(sys.argv)
-    # disable DPI scaling
-    app.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
-
-    # set splash screen
-    splash_icon = QtGui.QPixmap('img/logo-min.svg')
-    splash = QtWidgets.QSplashScreen(splash_icon, QtCore.Qt.WindowStaysOnTopHint)
-    splash.show()
-
-    # dark mode palette
-    if dark_mode := (darkdetect.isDark() or True):
-        app.setStyle('Fusion')
-        dark_palette = QtGui.QPalette()
-        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.Light, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.blue)
-        dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(59, 77, 100))
-        dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
-        app.setPalette(dark_palette)
-
-    # Apply custom fonts
-    [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
-
-    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-
-
-    default_settings = {
-        "hideCitizen": True,
-    }
-
-    # Create window
-    MainWindow = QtWidgets.QMainWindow()
-
-    # apply_stylesheet(app, theme='dark_cyan.xml')
-
-    window = UI()
-    app.exec_()
-
-    # runs after program is closed
-    # deletes user data if remember me was not toggled on login
-    if not window.rememberMe:
-        delete_folder('data')

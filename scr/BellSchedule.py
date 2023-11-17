@@ -1,25 +1,32 @@
-from requests import Session
-from datetime import date
-from dateutil import parser, rrule
-from datetime import datetime, timedelta
 import re
+from datetime import date, datetime, timedelta
+
+from dateutil import parser, rrule
 from pytz import utc
+from requests import Session
 
 """
 PARENT
 """
+
+
 class BellScheduleParent:
     url = None
-    
+
     def __init__(self, sess):
         self.sess = sess
 
     def get(self, **args):
-        return self.sess.get(f"https://kimdjytfhkfavzkkccxt.supabase.co/rest/v1/{self.url}".format(**args)).json()
+        return self.sess.get(
+            f"https://kimdjytfhkfavzkkccxt.supabase.co/rest/v1/{self.url}".format(**args)
+        ).json()
+
 
 """
 SPECIFICS
 """
+
+
 class BellSpecific:
     def __init__(self, data):
         for key, value in data.items():
@@ -30,79 +37,113 @@ class BellSpecific:
                 continue
             setattr(self, key, value)
 
+
 class BellDistrict(BellSpecific):
     pass
+
 
 class BellSchool(BellSpecific):
     pass
 
+
 class BellGroup(BellSpecific):
     pass
+
 
 class BellSchedule(BellSpecific):
     pass
 
+
 class BellRule(BellSpecific):
     pass
+
 
 class BellDay(BellSpecific):
     pass
 
+
 """
 DISTRICTS
 """
+
+
 class GetBellDistricts(BellScheduleParent):
     def get(self, id=0, **args):
         return {d['id']: BellDistrict(d) for d in super().get(id=id, **args)}
 
+
 class BellPopularDistricts(GetBellDistricts):
     """no params"""
+
     url = 'district?select=*&order=name.asc.nullslast'
+
 
 class BellAllDistricts(GetBellDistricts):
     """id: Minimum district id (for paging)"""
+
     url = 'district_all?select=*&id=gt.{id}&order=name.asc.nullslast&hide=eq.false&limit=20'
+
 
 """
 SCHOOLS
 """
+
+
 class GetBellSchool(BellScheduleParent):
     """district: BellDistrict"""
+
     def get(self, district: BellDistrict):
         return {d['id']: BellSchool(d) for d in super().get(id=district.id)}
+
 
 class BellSchoolsPerDistrict(GetBellSchool):
     url = 'school?select=*&district=eq.{id}&order=name.asc.nullslast'
 
+
 """
 SCHEDULE
 """
+
+
 class GetBellSchedule(BellScheduleParent):
     """school: BellSchool"""
+
     def get(self, school: BellSchool):
         schedule = {d['id']: BellSchedule(d) for d in super().get(id=school.id)}
-        schedule[0] = BellSchedule({'id': 0, 'name': 'No School - Holiday'})  # Normally school today, but there isn't
+        schedule[0] = BellSchedule(
+            {'id': 0, 'name': 'No School - Holiday'}
+        )  # Normally school today, but there isn't
         return schedule
-    
+
+
 class BellSchedulePerSchool(GetBellSchedule):
     url = 'schedule?select=*&school=eq.{id}&order=name.asc.nullslast'
+
 
 """
 GROUP
 """
+
+
 class GetBellGroup(BellScheduleParent):
     """school: BellSchool"""
+
     def get(self, school: BellSchool):
         return {d['id']: BellGroup(d) for d in super().get(id=school.id)}
+
 
 class BellGroupsPerSchool(GetBellGroup):
     url = 'group?select=*&school=eq.{id}&order=name.asc.nullslast'
 
+
 """
 RULE
 """
+
+
 class GetBellRule(BellScheduleParent):
     pass
+
 
 class BellDefaultRulesPerGroup(GetBellRule):
     url = 'rule?select=*&group=eq.{id}&type=eq.default'
@@ -115,11 +156,11 @@ class BellDefaultRulesPerGroup(GetBellRule):
     def _get_next_dt(self, resp, compare, index):
         if index == len(resp) - 1:
             return self.get_dtstart(resp[index]['rule']) + timedelta(weeks=52)
-        for r in resp[index+1:]:
+        for r in resp[index + 1 :]:
             if re.search(self._re_byday, r['rule'])[1] == compare:
                 return self.get_dtstart(r['rule'])
         return self.get_dtstart(r['rule']) + timedelta(weeks=52)
-    
+
     def get(self, group: BellGroup, schedule: dict):
         rules = {}
         resp = super().get(id=group.id)
@@ -131,17 +172,21 @@ class BellDefaultRulesPerGroup(GetBellRule):
                 if next_time and dt >= next_time:
                     break
                 # Add rule to rules dict
-                rules[dt.strftime(r'%Y-%m-%d')] = \
-                    BellRule({
+                rules[dt.strftime(r'%Y-%m-%d')] = BellRule(
+                    {
                         'name': schedule[d['schedule']].name,
                         'schedule': schedule[d['schedule']].id,
                         'id': d['id'],
-                    })
+                    }
+                )
         return rules
+
 
 class BellRulesPerGroup(GetBellRule):
     """group: BellGroup"""
+
     url = 'rule?select=*&group=eq.{id}&type=eq.override&date=gte.{date}'
+
     def get(self, group: BellGroup, schedule: dict):
         rules = {}
         resp = super().get(id=group.id, date=str(date.today()))
@@ -151,14 +196,19 @@ class BellRulesPerGroup(GetBellRule):
             rules[rule.date] = rule
         return rules
 
+
 """
 DAY
 """
+
+
 class GetBellDay(BellScheduleParent):
     """scheduleId: int"""
+
     def get(self, scheduleId: int):
         return {d['id']: BellDay(d) for d in super().get(id=scheduleId)}
-    
+
+
 class BellDayPerSchedule(GetBellDay):
     url = 'bell?select=*&schedule=eq.{id}&order=time.asc.nullslast'
 
@@ -180,7 +230,7 @@ def createSession():
         "Sec-Fetch-Site": "cross-site",
         "User-Agent": "Mozilla/5.0 (Linux; Android 12; Pixel 5 Build/SQ3A.220705.003.A1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/103.0.5060.71 Safari/537.36",
         "X-Client-Info": "supabase-js/1.35.3",
-        "X-Requested-With": "scott.william.bellschedule"
+        "X-Requested-With": "scott.william.bellschedule",
     }
     sess = Session()
     sess.headers = headers
@@ -192,14 +242,15 @@ def exampleRun():
     API usage example
     """
     sess = createSession()
+
     def prompt_values(specifics):
         # Simple function to list id's and values
         for s in specifics.values():
             print(f'{s.id}:\t{s.name}')
         return int(input('Select an ID: '))
-    
+
     """--- Gathering information ---"""
-    
+
     # Get district
     districts = BellPopularDistricts(sess).get()
     selectedDistrict = districts[prompt_values(districts)]
@@ -214,10 +265,10 @@ def exampleRun():
     # Get rules (a/b days) per group
     rules = {
         **BellDefaultRulesPerGroup(sess).get(group=selectedGroup, schedule=schedule),
-        **BellRulesPerGroup(sess).get(group=selectedGroup, schedule=schedule)
+        **BellRulesPerGroup(sess).get(group=selectedGroup, schedule=schedule),
     }
     print('---')
-    
+
     """--- Show information for today ---"""
     day = str(date.today())
     try:
@@ -238,13 +289,20 @@ def exampleRun():
     todaySchedule = BellDayPerSchedule(sess).get(today.schedule)
     # Print class times
     for period in todaySchedule.values():
-        print('Time:', period.time.strftime('%I:%M %p'), '-', # Time, formatted to 12 hour
-              'Names:', period.names, '-',  # Class names
-              'Icon:', period.icon)         # Icon svg file name
+        print(
+            'Time:',
+            period.time.strftime('%I:%M %p'),
+            '-',  # Time, formatted to 12 hour
+            'Names:',
+            period.names,
+            '-',  # Class names
+            'Icon:',
+            period.icon,
+        )  # Icon svg file name
     print('---')
-    
+
     """--- Get current class right now ---"""
-    
+
     t = Terminal()
     while True:
         now = datetime.now()
@@ -319,7 +377,6 @@ def get_schedule(sess, selected_school, rules):
 
     data['today'] = today  # Set today's name (A or B day)
 
-
     # Get today's schedule
     today_schedule = BellDayPerSchedule(sess).get(today.schedule)
     data['today_schedule'] = today_schedule
@@ -330,7 +387,7 @@ def get_relevant_schedule_info(schedule_data):
     """
     Gets info from schedule and current period
     :param schedule_data: Dictionary containing info from get_schedule()
-    :return: 
+    :return:
     """
     if not schedule_data:
         return
@@ -341,14 +398,20 @@ def get_relevant_schedule_info(schedule_data):
             next_day = schedule_data['next_school_day']
             # Show next school day
             next_day_date = parser.parse(next_day.date)
-            num_suffix = lambda n: ("th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th"))
+            num_suffix = lambda n: (
+                "th" if 4 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+            )
             next_day_date = next_day_date.strftime('%A, %b, %#d') + num_suffix(next_day_date.day)
-            display_data['next_period'] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
+            display_data[
+                'next_period'
+            ] = f'The next school day is \"{next_day.name}\", on {next_day_date}.'
         else:
             display_data['next_period'] = 'Cannot find the next school day.'
         # If there is no school then update labels accordingly
         display_data['today'] = 'No schedule today!'  # No school today
-        display_data['current_period'] = 'It looks like there is no schedule today. Enjoy the day off!'
+        display_data[
+            'current_period'
+        ] = 'It looks like there is no schedule today. Enjoy the day off!'
         display_data['time_left'] = ''
         return display_data
 
@@ -365,7 +428,6 @@ def get_relevant_schedule_info(schedule_data):
             # remove microseconds and leading 0 from hours
             display_data['time_left'] = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]
 
-
             try:
                 display_data['next_period'] = "Next: " + " / ".join(today_schedule[id + 1].names)
             except KeyError:
@@ -381,10 +443,13 @@ def get_relevant_schedule_info(schedule_data):
         # time_left = str(tomorrow - now)
         # time_left = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]  # removes microseconds and leading 0 from hours
         next_day = schedule_data['next_school_day']
-        display_data['next_period'] = f"No more classes today! The next school day is \"{next_day.name}\""
+        display_data[
+            'next_period'
+        ] = f"No more classes today! The next school day is \"{next_day.name}\""
     return display_data
-        
-    
+
+
 if __name__ == "__main__":
     from blessed import Terminal
+
     exampleRun()

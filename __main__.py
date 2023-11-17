@@ -1,44 +1,12 @@
-import contextlib
-import ctypes as ct
-import os
-import queue
 import sys
 from glob import glob
 
 import darkdetect
-import qfluentwidgets
-
-# import qdarktheme
-from Crypto.Random import get_random_bytes
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
-from qfluentwidgets.components.widgets.frameless_window import FramelessWindow
 
-# import qdarkstyle
-
-version = 'v0.1.0 BETA'
-
-try:
-    sys.path.append(sys._MEIPASS)
-except:
-    sys.path.append(os.path.dirname(__file__))
-
-
-class Window(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
-        uic.loadUi("NewMainWindow.ui", self)
-        self.setWindowTitle(f'ReSkyward - {version}')
-        self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
-
-        # dark_title_bar(int(self.winId()))
-
-        splash.hide()
-        self.show()
-
+from .mixin import *
+from .ui.main import UI
 
 if __name__ == "__main__":
     # initialize app
@@ -47,12 +15,12 @@ if __name__ == "__main__":
     app.setAttribute(QtCore.Qt.AA_DisableHighDpiScaling)
 
     # set splash screen
-    splash_icon = QtGui.QPixmap('img/logo-min.svg')
+    splash_icon = QtGui.QPixmap(WINDOW_ICON)
     splash = QtWidgets.QSplashScreen(splash_icon, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
 
     # dark mode palette
-    if dark_mode := (darkdetect.isDark() or True):
+    if UI.DARK_MODE:
         app.setStyle('Fusion')
         dark_palette = QtGui.QPalette()
         dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
@@ -72,18 +40,24 @@ if __name__ == "__main__":
         app.setPalette(dark_palette)
 
     # Apply custom fonts
-    [QtGui.QFontDatabase.addApplicationFont(file) for file in glob('fonts/*.ttf')]
+    [
+        QtGui.QFontDatabase.addApplicationFont(file)
+        for file in glob(join(dirname(__file__), 'fonts/*.ttf'))
+    ]
 
     # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-
-    default_settings = {
-        "hideCitizen": True,
-    }
 
     # Create window
     MainWindow = QtWidgets.QMainWindow()
 
     # apply_stylesheet(app, theme='dark_cyan.xml')
 
-    window = Window()
+    window = UI()
+    splash.hide()
+    window.show()
     app.exec_()
+
+    # runs after program is closed
+    # deletes user data if remember me was not toggled on login
+    if not window.rememberMe:
+        delete_folder('data')
