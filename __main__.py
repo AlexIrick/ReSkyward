@@ -5,8 +5,8 @@ import darkdetect
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
 
-from .mixin import *
-from .ui.main import UI
+from mixin import *
+from main import UI
 
 if __name__ == "__main__":
     # initialize app

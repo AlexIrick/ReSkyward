@@ -6,7 +6,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup as bs
 from titlecase import titlecase
 
-from . import sqlgrades
+import sqlgrades
 
 
 class ParseData:

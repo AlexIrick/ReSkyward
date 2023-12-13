@@ -20,10 +20,10 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
 
-from ReSkyward.mixin import *
-from ReSkyward.scr import BellSchedule, skyward
+from mixin import *
+import BellSchedule, skyward
 
-from . import experimentmode, skywardview
+import experimentmode, skywardview
 
 # from qt_material import list_themes, apply_stylesheet
 
