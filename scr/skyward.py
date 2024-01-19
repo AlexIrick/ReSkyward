@@ -5,7 +5,8 @@ import time
 import re
 import yaml
 import getpass
-from . import scrape
+import scrape
+from typing import Optional, Dict
 
 
 class InvalidLogin(Exception):
@@ -15,9 +16,10 @@ class InvalidLogin(Exception):
 
 
 class Page:
-    post = True
+    post: bool = True
+    _soup: Optional[bs] = None
 
-    def __init__(self, parent: 'Page' = None):
+    def __init__(self, parent: 'Page' = None) -> None:
         self.response = None
         self.session = (
             parent.session
@@ -25,23 +27,28 @@ class Page:
             else Session(client_identifier="chrome_120", random_tls_extension_order=True)
         )
 
-    def get_form_action(self, field):
+    def get_form_action(self, field) -> str:
         return self.soup.find("input", id=field)['value']
 
-    def send(self):
+    def send(self) -> None:
         req = self.session.post if self.post else self.session.get
-        print('REQUEST:', self.__class__.__name__)
         self.response = req(self.url, headers=self.headers, data=self.data or None)
-        self.soup = bs(self.response.text, "lxml", parse_only=ss("input"))
+        print('PROPAGATING:', self.__class__.__name__)
+
+    @property
+    def soup(self) -> bs:
+        if self._soup is None:
+            self._soup = bs(self.response.text, "lxml", parse_only=ss("input"))
+        return self._soup
 
     @cached_property
-    def data(self):
+    def data(self) -> Dict[str, str]:
         ...
 
 
 class HomePage(Page):
-    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w"
-    headers = {
+    url: str = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w"
+    headers: dict = {
         "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\"",
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Platform": "\"Windows\"",
@@ -57,20 +64,20 @@ class HomePage(Page):
         "Priority": "u=0, i",
         "Connection": "close",
     }
-    post = False
+    post: bool = False
 
 
 class SkyPort(Page):
-    def __init__(self, username, password, parent):
+    def __init__(self, username: str, password: str, parent: Page):
         self.username: str = username
         self.password: str = password
         super().__init__()
         # dependency page
-        self.page = HomePage(parent=parent)
+        self.page: HomePage = HomePage(parent=parent)
 
-    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/skyporthttp.w"
+    url: str = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/skyporthttp.w"
 
-    updated_headers = {
+    updated_headers: Dict[str, str] = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "*/*",
         "Origin": "https://skyward-mansfield.iscorp.com",
@@ -81,11 +88,11 @@ class SkyPort(Page):
     }
 
     @cached_property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
         return {**self.page.headers, **self.updated_headers}
 
     @cached_property
-    def extracted_fields(self):
+    def extracted_fields(self) -> Dict[str, str]:
         # list of data items that need to be searched via get_form_action
         data_items = (
             'hNavSearchOption',
@@ -106,7 +113,7 @@ class SkyPort(Page):
         return {item: self.page.get_form_action(item) for item in data_items}
 
     @cached_property
-    def data(self):
+    def data(self) -> Dict[str, str]:
         self.page.send()
         data = {
             "requestAction": "eel",
@@ -155,17 +162,16 @@ class SkyPort(Page):
 
         return data
 
-    def send(self):
+    def send(self) -> None:
         super().send()
         if "We are unable to validate the information entered" in self.response.text:
             raise InvalidLogin("Invalid Login")
 
     @cached_property
-    def extracted_skyport(self):
+    def extracted_skyport(self) -> Dict[str, str]:
         # Regex to capture the content inside <li> tags
-        regex = re.compile(r'<li>\s*?([^<]+)\s*?</li>')
-        match = regex.search(self.response.text)
-        values = match.group(1).split('^')
+        match = re.search(r'<li>\s*?([^<]+)\s*?</li>', self.response.text)
+        values = match[1].split('^')
         # this has really weird formatting
         # here is an example:
         # 256842^513684^80444170^79098768^17765^ex123456^2^sfhome01.w^false^no ^no^no^^enc^encses^LoginHistoryIdentifier...
@@ -190,26 +196,26 @@ class SkyPort(Page):
 
 
 class SfGradebook(Page):
-    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/sfgradebook001.w"
+    url: str = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/sfgradebook001.w"
 
-    updated_headers = {
+    updated_headers: Dict[str, str] = {
         "Cache-Control": "max-age=0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Dest": "document",
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         # dependency page
         self.page = SkyPort(*args, **kwargs, parent=self)
 
     @cached_property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
         return {**self.page.headers, **self.updated_headers}
 
     @cached_property
-    def data(self):
+    def data(self) -> Dict[str, str]:
         self.page.send()
 
         data = {
@@ -325,17 +331,19 @@ class SfGradebook(Page):
 
 
 def GetSkywardPage(username: str, password: str):
-    page = SfGradebook(username, password)
+    page: Page = SfGradebook(username, password)
     page.send()
 
     # get grid objects
-    b = "sff.sv('sf_gridObjects',$.extend((sff.getValue('sf_gridObjects') || {}), "
+    print('PARSING: Grid objects')
+    b: str = "sff.sv('sf_gridObjects',$.extend((sff.getValue('sf_gridObjects') || {}), "
     data = yaml.load(  # use yaml for more tolerant parsing
         re.search(re.escape(b) + '\\{.*\\}', page.response.text)[0][len(b) :],
         Loader=yaml.CLoader,
     )
 
-    # run scraper, write to file
+    # parse html tables
+    print('PARSING: HTML tables')
     grade_soup = bs(page.response.text, 'lxml')
     data_parser = scrape.ParseData(grade_soup, data)
     data_parser.run()

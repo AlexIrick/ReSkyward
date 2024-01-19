@@ -1,4 +1,4 @@
-import json
+import orjson
 import os
 import re
 from datetime import datetime
@@ -7,6 +7,10 @@ from bs4 import BeautifulSoup as bs
 from titlecase import titlecase
 
 import sqlgrades
+
+
+def dump(data, iostream):
+    iostream.write(orjson.dumps(data))
 
 
 class ParseData:
@@ -138,8 +142,8 @@ class ParseData:
             # db.create_class_table(file_name)
             # db.insert_list_into_table(file_name, class_['assignments'])
             # db.commit()
-            with open(file_name, 'w') as f:
-                json.dump(class_['assignments'], f, indent=4)
+            with open(file_name, 'wb') as f:
+                dump(class_['assignments'], f)
             tab_dict[j]['assignments'] = file_name
         return tab_dict
 
@@ -148,12 +152,12 @@ class ParseData:
             os.mkdir('data')
         grades_db = sqlgrades.GradesDatabase('grades.db')
         tables = [self.grid_object_to_grid(table, grades_db) for table in self.data.values()]
-        with open('data/SkywardExport.json', 'w') as f:
-            json.dump(tables, f, indent=4)
+        with open('data/SkywardExport.json', 'wb') as f:
+            dump(tables, f)
         print('Done!')
         # Store the refresh date
-        with open('data/updated.json', 'w') as f:
-            json.dump({'date': datetime.now().strftime(r"%b %#d, %#I:%M:%S %p")}, f, indent=4)
+        with open('data/updated.json', 'wb') as f:
+            dump({'date': datetime.now().strftime(r"%b %#d, %#I:%M:%S %p")}, f)
 
 
 if __name__ == "__main__":
