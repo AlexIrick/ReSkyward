@@ -123,8 +123,8 @@ class UI(QMainWindow):
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
         self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(4, 1))
-        self.skywardLoginButton.clicked.connect(self.login_button_pressed)
-        self.refreshButton.clicked.connect(self.refresh_database)
+        self.skywardLoginButton.clicked.connect(self.login_start)
+        self.refreshButton.clicked.connect(self.login_start)
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
         self.experimentButton.clicked.connect(self.experiment_toggle)
@@ -175,8 +175,8 @@ class UI(QMainWindow):
 
         # set dark title bar
         # username = get_user_info()[0]
-        self.loginLabel.setText(f'Logged in as {self.skywardUsername}')
-        self.helloUserLabel.setText(f'Hello {self.skywardUsername}!')
+        # self.loginLabel.setText(f'Logged in as {self.skywardUsername}')
+        # self.helloUserLabel.setText(f'Hello {self.skywardUsername}!')
 
         dark_title_bar(int(self.winId()))
 
@@ -674,25 +674,6 @@ class UI(QMainWindow):
         _buttons[button_ref][0].setChecked(True)  # force the button to stay checked
         self.tabsStackedWidget.setCurrentIndex(_buttons[button_ref][1])
 
-    def run_scraper(self, username, password):
-        """
-        (RUNS IN THREAD)
-        Run scraper and return any errors
-        Sends a signal to self.database_refreshed when the scraper is done
-        """
-        try:
-            skyward.GetSkywardPage(username, password)
-        except skyward.SkywardLoginFailed:
-            self.error_msg_signal.emit('Invalid login. Please try again.')
-            self.loginLabel.setText(f'Login failed: {username}')
-            self.title_bar_button_clicked('settings', False)
-        except requests.exceptions.ConnectionError:
-            self.error_msg_signal.emit('Network error. Please check your internet connection.')
-        else:
-            self.database_refreshed.emit()
-            self.loginLabel.setText(f'Logged in as {username}')
-            self.helloUserLabel.setText(f'Hello {username}!')
-
     """
     ---Settings---
     """
@@ -729,31 +710,42 @@ class UI(QMainWindow):
         self.settings["bellSchedule"]["groupID"] = self.bell_group_id
 
         with open('user/config.json', 'w') as f:
+            f.write('')
             json.dump(self.settings, f, indent=4)
         # load objects
         self.load_config_objects()
 
-    def login_button_pressed(self):
-        """
-        Called when the save button is clicked
-        Check if the username and password fields are empty
-        """
-        if self.usernameInput.text() and self.passwordInput.text():
-            self.skywardUsername = self.usernameInput.text()
-            self.skywardPassword = self.passwordInput.text()
-            self.usernameInput.clear()
-            self.passwordInput.clear()
+    def login_start(self):
+        Thread(target=self.login, daemon=True).start()
 
-            # TODO: ONLY SAVE LOGIN IF REFRESH IS SUCCESSFUL
-            # refreshes database
-            self.refresh_database()
+    def login(self):
+        user = self.usernameInput.text()
+        pw = self.passwordInput.text()
+        # self.usernameInput.clear()
+        self.passwordInput.clear()
+        self.skywardLoginButton.setEnabled(False)
 
-            self.save_login()
+        self.lastRefreshedLabel.setText('Refreshing...')
+        # data = self.get_user_info()
 
-        elif self.usernameInput.text() or self.passwordInput.text():
-            self.message_box(
-                'ReSkyward - Input Error', 'Please enter both a username and password.'
-            )
+        # TODO: improve exception handler
+        try:
+            # login(self, user, pw)
+            skyward.GetSkywardPage(user, pw)
+        except skyward.InvalidLogin:
+            self.settings_clicked(0)
+            self.error_msg_signal.emit('Invalid login. Please try again.')
+            self.loginLabel.setText('Not logged in')
+            self.title_bar_button_clicked('settings', False)
+        except requests.exceptions.ConnectionError:
+            self.error_msg_signal.emit('Network error. Please check your internet connection.')
+        else:
+            self.database_refreshed.emit()
+            self.loginLabel.setText(f'Logged in as {user}')
+            self.helloUserLabel.setText(f'Hello {user}!')
+            # TODO: determine if we should add saving login
+            #self.save_login()
+        self.skywardLoginButton.setEnabled(True)
 
     def load_config(self):
         """
@@ -820,28 +812,25 @@ class UI(QMainWindow):
             # clears user info file
             open("user/encrypted.bin", "wb").close()
 
-    def refresh_database(self):
-        """
-        Get password and decrypt
-        """
-        if self.loginRememberCheck.isChecked():
-            data = get_user_info()
-            if data:
-                # set text for refresh label
-                self.lastRefreshedLabel.setText('Refreshing...')
-                # run scraper as thread: inputs user login
-                Thread(target=self.run_scraper, args=data, daemon=True).start()
-            else:
-                self.settings_clicked(0)
+    def get_user_info(self):
+        # reads key from file
+        if os.path.exists('user/aes.bin'):
+            with open("user/aes.bin", "rb") as file_in:
+                key = file_in.read()
         else:
-            # set text for refresh label
-            self.lastRefreshedLabel.setText('Refreshing...')
-            # run scraper as thread: inputs user login
-            Thread(
-                target=self.run_scraper,
-                args=[self.skywardUsername, self.skywardPassword],
-                daemon=True,
-            ).start()
+            return [self.skywardUsername, self.skywardPassword]
+
+        if os.path.exists('user/encrypted.bin'):
+            # reads encrypted user info from file
+            with open("user/encrypted.bin", "rb") as file_in:
+                nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
+        else:
+            return False
+
+        # generate cypher from key
+        cipher = AES.new(key, AES.MODE_EAX, nonce)
+        # decrypts user login
+        return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
 
     def clear_all_user_data(self):
         # log out
@@ -887,24 +876,3 @@ def dark_title_bar(hwnd):
 
 def format_round(number, decimal_places):
     return float('{0:.{1}f}'.format(number, decimal_places))
-
-
-def get_user_info():
-    # reads key from file
-    if os.path.exists('user/aes.bin'):
-        with open("user/aes.bin", "rb") as file_in:
-            key = file_in.read()
-    else:
-        return False
-
-    if os.path.exists('user/encrypted.bin'):
-        # reads encrypted user info from file
-        with open("user/encrypted.bin", "rb") as file_in:
-            nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
-    else:
-        return False
-
-    # generate cypher from key
-    cipher = AES.new(key, AES.MODE_EAX, nonce)
-    # decrypts user login
-    return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
