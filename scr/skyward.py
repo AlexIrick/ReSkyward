@@ -1,52 +1,76 @@
-import requests
-from bs4 import BeautifulSoup as bs
+from tls_client import Session
+from functools import cached_property
+from bs4 import BeautifulSoup as bs, SoupStrainer as ss
 import time
-import yaml
 import re
+import yaml
 import getpass
-import scrape
+from . import scrape
 
 
-class SkywardLoginFailed(Exception):
+class InvalidLogin(Exception):
     """Raised when the Skyward login fails"""
+
     pass
 
 
-def GetSkywardPage(username, password):
-    session = requests.session()
+class Page:
+    post = True
+
+    def __init__(self, parent: 'Page' = None):
+        self.response = None
+        self.session = (
+            parent.session
+            if parent
+            else Session(client_identifier="chrome_120", random_tls_extension_order=True)
+        )
+
+    def get_form_action(self, field):
+        return self.soup.find("input", id=field)['value']
+
+    def send(self):
+        req = self.session.post if self.post else self.session.get
+        print('REQUEST:', self.__class__.__name__)
+        self.response = req(self.url, headers=self.headers, data=self.data or None)
+        self.soup = bs(self.response.text, "lxml", parse_only=ss("input"))
+
+    @cached_property
+    def data(self):
+        ...
+
+
+class HomePage(Page):
+    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w"
     headers = {
-        "Sec-Ch-Ua": "\"(Not(A:Brand\";v=\"8\", \"Chromium\";v=\"99\"",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\"",
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Platform": "\"Windows\"",
         "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.71 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-User": "?1",
         "Sec-Fetch-Dest": "document",
-        "Accept-Encoding": "gzip, deflate",
+        "Accept-Encoding": "deflate",
         "Accept-Language": "en-US,en;q=0.9",
-        "Connection": "close"
+        "Priority": "u=0, i",
+        "Connection": "close",
     }
-    session.headers = headers.copy()
+    post = False
 
 
-    ## INITAL PAGE ##
-    r_init = session.get("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w")
+class SkyPort(Page):
+    def __init__(self, username, password, parent):
+        self.username: str = username
+        self.password: str = password
+        super().__init__()
+        # dependency page
+        self.page = HomePage(parent=parent)
 
-    print('SENDING REQUEST 1')
-    init_soup = bs(r_init.text, "lxml")
-    print('REQUEST 1 SENT')
-    print(init_soup.prettify())
+    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/skyporthttp.w"
 
-
-    ## LOGIN ##
-    def get_form_action(field, soup=init_soup):
-        print(field)
-        return soup.find("input", id=field)["value"]
-
-    session.headers.update({
+    updated_headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "*/*",
         "Origin": "https://skyward-mansfield.iscorp.com",
@@ -54,105 +78,265 @@ def GetSkywardPage(username, password):
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Dest": "empty",
         "Referer": "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w",
-    })
-    del session.headers["Upgrade-Insecure-Requests"]
-
-    _1_data = {
-        "requestAction": "eel",
-        "method": "extrainfo",
-        "codeType": "tryLogin",
-        "codeValue": username, "login": username,
-        "password":   password,
-        "Browser": "Chrome", "BrowserVersion": "99",
-        "screenWidth": "800", "screenHeight": "600", 
-        "userAgent": headers['User-Agent'],
-        "osName": "Windows 10",
-        "brwsInfo": "Chrome 99", "subversion": "99",
-        "supported": "true",
-        "lip": "ddaa4eb5-5e6b-4adc-ab6c-df3d03d51bad.local",
-        "cUserRole": "family/student",
-        "fwtimestamp": str(int(time.time()))
     }
 
-    for key in [
-        "SecurityMenuID", "HomePageMenuID", "nameid", "hNavSearchOption", "hSecCache", "CurrentProgram", "CurrentVersion",
-        "SuperVersion","PaCVersion","BrowserPlatform","TouchDevice","noheader","duserid","hIPInfo","HomePage","loginID","hUseCGIIP",
-        "hScrollBarWidth","UserSecLevel","UserLookupLevel","AllowSpecial","hAnon","pState","pCountry","hDisplayBorder","hAlternateColors",
-        "hforgotLoginPage","pageused","recordLimit","disableAnimations","hOpenSave","hAutoOpenPref","hButtonHotKeyIDs","hButtonHotKeys","hLoadTime"
-    ]:
-        _1_data[key] = get_form_action(key)
+    @cached_property
+    def headers(self):
+        return {**self.page.headers, **self.updated_headers}
 
-    r_login = session.post("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/skyporthttp.w", data=_1_data)
-    session_data = bs(r_login.text, 'lxml').find('li').text.split('^')
-    if len(session_data) < 4:
-        raise SkywardLoginFailed("Login Failed")
+    @cached_property
+    def extracted_fields(self):
+        # list of data items that need to be searched via get_form_action
+        data_items = (
+            'hNavSearchOption',
+            'hSecCache',
+            'CurrentProgram',
+            'CurrentVersion',
+            'SuperVersion',
+            'PaCVersion',
+            'hIPInfo',
+            'hAnon',
+            'pState',
+            'pCountry',
+            'hforgotLoginPage',
+            'hButtonHotKeys',
+            'hLoadTime',
+            'hButtonHotKeyIDs',
+        )
+        return {item: self.page.get_form_action(item) for item in data_items}
 
-    ## HOME ##
+    @cached_property
+    def data(self):
+        self.page.send()
+        data = {
+            "requestAction": "eel",
+            "method": "extrainfo",
+            "codeType": "tryLogin",
+            "codeValue": self.username,
+            "login": self.username,
+            "password": self.password,
+            "SecurityMenuID": "0",
+            "HomePageMenuID": "0",
+            "nameid": "-1",
+            "Browser": "Chrome",
+            "BrowserVersion": "120",
+            "BrowserPlatform": "Win32",
+            "TouchDevice": "false",
+            "noheader": "yes",
+            "duserid": "-1",
+            "HomePage": "sepadm01.w",
+            "loginID": "-1",
+            "hUseCGIIP": "yes",
+            "hScrollBarWidth": "17",
+            "UserSecLevel": "5",
+            "UserLookupLevel": "5",
+            "AllowSpecial": "false",
+            "hDisplayBorder": "true",
+            "hAlternateColors": "true",
+            "screenWidth": "1707",
+            "screenHeight": "1067",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.71 Safari/537.36",
+            "osName": "Windows 10",
+            "brwsInfo": "Chrome 120",
+            "subversion": "120",
+            "supported": "true",
+            "pageused": "Desktop",
+            "recordLimit": "30",
+            "disableAnimations": "yes",
+            "hOpenSave": "no",
+            "hAutoOpenPref": "no",
+            "lip": "17c0f264-4170-4642-ac30-1dfed185bdf9.local",
+            "cUserRole": "family/student",
+            "fwtimestamp": str(int(time.time())),
+        }
 
-    # update headers
-    headers.update({
+        # update
+        data.update(self.extracted_fields)
+
+        return data
+
+    def send(self):
+        super().send()
+        if "We are unable to validate the information entered" in self.response.text:
+            raise InvalidLogin("Invalid Login")
+
+    @cached_property
+    def extracted_skyport(self):
+        # Regex to capture the content inside <li> tags
+        regex = re.compile(r'<li>\s*?([^<]+)\s*?</li>')
+        match = regex.search(self.response.text)
+        values = match.group(1).split('^')
+        # this has really weird formatting
+        # here is an example:
+        # 256842^513684^80444170^79098768^17765^ex123456^2^sfhome01.w^false^no ^no^no^^enc^encses^LoginHistoryIdentifier...
+        # 0     1      2        3        4     5        6 7          8     9   0 1   23   4      ...
+
+        # mapping
+        return {
+            "dwd": values[0],  # 256842
+            "web-data-recid": values[1],  # 513684
+            "wfaacl-recid": values[2],  # 80444170
+            "wfaacl": values[3],  # 79098768
+            "nameid": values[4],  # 17765
+            "duserid": values[5],  # ex123456
+            "User-Type": values[6],  # 2
+            "PreviousProgram": values[7],  # sfhome01.w
+            "TouchDevice": values[8],  # false
+            # "OpenRow": 'no',  # assuming 'no' maps to 'OpenRow'
+            # "OpenDetails": 'no',  # assuming 'no' maps to 'OpenDetails'
+            "enc": values[13],  # enc
+            "encses": values[14],  # encses
+        }
+
+
+class SfGradebook(Page):
+    url = "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/sfgradebook001.w"
+
+    updated_headers = {
         "Cache-Control": "max-age=0",
-        "Origin": "https://skyward-mansfield.iscorp.com",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Sec-Fetch-Site": "same-origin",
-        "Referer": "https://skyward-mansfield.iscorp.com/scripts/wsisa.dll/WService=wsedumansfieldtx/fwemnu01.w",
-    })
-    del headers["Sec-Fetch-User"]       # homepage isnt initated by user interaection, so delete this header
-    session.headers = headers.copy()    # copy to session headers
-
-    _2_data = {
-        "dwd": session_data[0],
-        "wfaacl": session_data[3],
-        "encses": session_data[-1],
-        "PopupWidth": "1013",
-        "PopupHeight": "671",
-        "vSelectMode": "N",
-        "web-data-recid": session_data[1],
-        "wfaacl-recid": session_data[2],
-        "User-Type": "2",
-        "showTracker": "false",
-        "displaySecond": "no",
-        "insecure": "no",
-        "enc": session_data[-2],
-        "lip": "ddaa4eb5-5e6b-4adc-ab6c-df3d03d51bad.local"
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Dest": "document",
     }
 
-    for key in [
-        "SecurityMenuID", "HomePageMenuID", "nameid", "hNavSearchOption", "CurrentProgram", "CurrentVersion", "hSecCache",
-        "SuperVersion", "PaCVersion", "Browser", "BrowserVersion", "BrowserPlatform", "TouchDevice", "noheader",
-        "duserid", "hIPInfo", "HomePage", "loginID", "hUseCGIIP", "hScrollBarWidth", "UserSecLevel", "UserLookupLevel",
-        "AllowSpecial", "hAnon", "pState", "pCountry", "hDisplayBorder", "hAlternateColors", "screenWidth", "screenHeight",
-        "hforgotLoginPage", "userAgent", "osName", "brwsInfo", "subversion", "supported", "pageused", "recordLimit",
-        "disableAnimations", "hOpenSave", "hAutoOpenPref", "hButtonHotKeyIDs", "hButtonHotKeys", "hLoadTime"
-    ]:  _2_data[key] = _1_data[key]
-    for key in [
-        "login", "password", "encsec", "entity", "entities", "LinkNames", "MobileId", "hNavMenus", "hNavSubMenus",
-        "LinkData", "passedparams", "vMaintOption", "currentrecord", "encrow", "BrowseRowNumber", "OpenRow",
-        "OpenDetails", "PreviousProgram", "RefreshMode", "hExcelRandom", "hBrowseFirstRowid", "hApplyingFilter",
-        "hRepositioning", "pDesc", "pProgram", "pParams", "pPath", "pInfo", "pType", "pSrpplmIn", "pPriority",
-        "pButtons", "fileUploadLimit", "blobid", "pEnc", "fileInputId", "delAttachReturn", "BrowserName",
-        "tempAccess", "redirectTo", "hFilterOpen", "filterElementList", "currentbrowse", "vSelectedColumn",
-        "vSelectedColumnDirection",
-    ]:  _2_data[key] = ''
-    r_home = session.post("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/sfhome01.w", data=_2_data)
-    home_soup = bs(r_home.text, 'lxml')
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        # dependency page
+        self.page = SkyPort(*args, **kwargs, parent=self)
+
+    @cached_property
+    def headers(self):
+        return {**self.page.headers, **self.updated_headers}
+
+    @cached_property
+    def data(self):
+        self.page.send()
+
+        data = {
+            "login": '',
+            "password": '',
+            "cUserRole": "family/student",
+            # "dwd": "291807",
+            # "wfaacl": "79122477",
+            # "encses": "nplndFbBvpliibpb",
+            "entity": '',
+            "entities": '',
+            "SecurityMenuID": "0",
+            "HomePageMenuID": "0",
+            "LinkNames": '',
+            # "nameid": "17765",
+            "MobileId": '',
+            "hNavMenus": '',
+            "hNavSubMenus": '',
+            # "hNavSearchOption": "all",
+            # "hSecCache": "0 items in 0 entities",
+            "LinkData": '',
+            "passedparams": '',
+            "vMaintOption": '',
+            # "CurrentProgram": "skyportlogin.w",
+            # "CurrentVersion": "010197",
+            # "SuperVersion": "012157",
+            # "PaCVersion": "05.23.10.00.08",
+            "currentrecord": '',
+            "encrow": '',
+            "BrowseRowNumber": '',
+            "Browser": "Chrome",
+            "BrowserVersion": "120",
+            "BrowserPlatform": "Win32",
+            # "TouchDevice": "false",
+            "OpenRow": '',
+            "OpenDetails": '',
+            "PopupWidth": "1013",
+            "PopupHeight": "671",
+            "noheader": "yes",
+            "vSelectMode": "N",
+            # "PreviousProgram": '',
+            # "duserid"
+            "RefreshMode": '',
+            "hExcelRandom": '',
+            # "hIPInfo"
+            "hBrowseFirstRowid": '',
+            "HomePage": "sepadm01.w",
+            "hApplyingFilter": '',
+            "hRepositioning": '',
+            "loginID": "-1",
+            "pDesc": '',
+            "pProgram": '',
+            "pParams": '',
+            "pPath": '',
+            "pInfo": '',
+            "pType": '',
+            "pSrpplmIn": '',
+            "pPriority": '',
+            "pButtons": '',
+            "fileUploadLimit": '',
+            "blobid": '',
+            "pEnc": '',
+            "fileInputId": '',
+            "delAttachReturn": '',
+            "hUseCGIIP": "yes",
+            "hScrollBarWidth": "17",
+            "UserSecLevel": "5",
+            "UserLookupLevel": "5",
+            "AllowSpecial": "false",
+            # "hAnon": "bjlbYpAByjicxUsV",
+            # "pState": "TX",
+            # "pCountry": "US",
+            "hDisplayBorder": "true",
+            "hAlternateColors": "true",
+            "BrowserName": '',
+            # "web-data-recid": "583614",
+            # "wfaacl-recid": "80469124",
+            # "User-Type": "2",
+            "tempAccess": '',
+            "screenWidth": "1707",
+            "screenHeight": "1067",
+            "showTracker": "false",
+            "displaySecond": "no",
+            "insecure": "no",
+            "redirectTo": '',
+            # "enc": "kUncFrlcNcvckfkj",
+            # "hforgotLoginPage": "fwemnu01",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.71 Safari/537.36",
+            "osName": "Windows 10",
+            "brwsInfo": "Chrome 120",
+            "subversion": "120",
+            "supported": "true",
+            "pageused": "Desktop",
+            "recordLimit": "30",
+            "hFilterOpen": '',
+            "filterElementList": '',
+            "currentbrowse": '',
+            "vSelectedColumn": '',
+            "vSelectedColumnDirection": '',
+            "disableAnimations": "yes",
+            "hOpenSave": "no",
+            "hAutoOpenPref": "no",
+            # "hButtonHotKeyIDs": "bCancel",
+            # "hButtonHotKeys": "B",
+            # "hLoadTime": ".036",
+            "lip": "17c0f264-4170-4642-ac30-1dfed185bdf9.local",
+        }
+
+        data.update(self.page.extracted_skyport)
+        data.update(self.page.extracted_fields)
+
+        return data
 
 
-    ## GRADEBOOK ##
-    session.headers["Sec-Fetch-User"] = '?1'    # mark from here on as user initated
-
-    _3_data = {"sessionid": f"{session_data[1]}\x15{session_data[2]}", "encses": get_form_action("encses", home_soup)}
-    r_gradebook = session.post("https://skyward-mansfield.iscorp.com:443/scripts/wsisa.dll/WService=wsedumansfieldtx/sfgradebook001.w", data=_3_data)
-    grade_soup = bs(r_gradebook.text, 'lxml') # we will use this later
+def GetSkywardPage(username: str, password: str):
+    page = SfGradebook(username, password)
+    page.send()
 
     # get grid objects
     b = "sff.sv('sf_gridObjects',$.extend((sff.getValue('sf_gridObjects') || {}), "
-    data = yaml.load(       # use yaml for more tolerant parsing
-        re.search(re.escape(b)+'\\{.*\\}', r_gradebook.text)[0][len(b):],
+    data = yaml.load(  # use yaml for more tolerant parsing
+        re.search(re.escape(b) + '\\{.*\\}', page.response.text)[0][len(b) :],
         Loader=yaml.CLoader,
     )
 
     # run scraper, write to file
+    grade_soup = bs(page.response.text, 'lxml')
     data_parser = scrape.ParseData(grade_soup, data)
     data_parser.run()
 
