@@ -1,0 +1,23 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "ReSkyward"
+version = "0.1.0-beta"
+description = "ReSkyward is a fast & secure desktop client for students to view their grades"
+authors = ["Alex Irick <ai199864@misdmail.net>", "Samuel Newville <sn190732@misdmail.net>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/AlexIrick/ReSkyward"
+documentation = "https://github.com/AlexIrick/ReSkyward"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+orjson = "*"
+tls-client = "*"
+pyqt5 = "*"
+pyqtconfig = "*"
+darkdetect = "*"
+bs4 = "*"
+pycreds = "*"
