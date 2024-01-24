@@ -345,7 +345,7 @@ def GetSkywardPage(username: str, password: str):
     # parse html tables
     print('PARSING: HTML tables')
     grade_soup = bs(page.response.text, 'lxml')
-    data_parser = scrape.ParseData(grade_soup, data)
+    data_parser = parser.ParseData(grade_soup, data)
     data_parser.run()
 
 

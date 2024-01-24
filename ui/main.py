@@ -7,11 +7,8 @@ from os.path import dirname, join
 from threading import Thread
 
 import darkdetect
-import requests.exceptions
-from Crypto.Cipher import AES
 
 # import qdarktheme
-from Crypto.Random import get_random_bytes
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -19,8 +16,8 @@ from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWid
 
 import BellUI
 from mixin import *
-import scrape, config
-
+import config
+import login
 
 import experimentmode, skywardview
 
@@ -65,7 +62,7 @@ class UI(QMainWindow):
         self.skywardUsername = ''
         self.skywardPassword = ''
         self._class_ids = {}
-        self.rememberMe = True
+        self.rememberMe = False
         self.citizenColumns = [1, 4, 7, 12, 15, 18]
         self.experimentItems = []
         self.classViewItems = []
@@ -112,8 +109,9 @@ class UI(QMainWindow):
         self.settingsButton.clicked.connect(lambda: self.settings_clicked(-1))
         self.settingsLoginButton.clicked.connect(lambda: self.settings_clicked(0))
         self.settingsBellButton.clicked.connect(lambda: self.settings_clicked(4, 1))
-        self.skywardLoginButton.clicked.connect(self.login_start)
-        self.refreshButton.clicked.connect(self.login_start)
+        self.skywardLoginButton.clicked.connect(self.login_button)
+        self.refreshButton.clicked.connect(self.refresh_button)
+
         self.clearUserDataButton.clicked.connect(self.clear_all_user_data)
 
         self.experimentButton.clicked.connect(self.experiment_toggle)
@@ -146,7 +144,6 @@ class UI(QMainWindow):
         # hide experiment
         self.experimentGroup.hide()
 
-
         # SKYWARD LOGIN
         self.showPasswordCheck.stateChanged.connect(self.set_password_visibility)
 
@@ -166,7 +163,7 @@ class UI(QMainWindow):
         if not os.path.exists('user'):
             os.mkdir('user')
 
-        self.logged_in = self.load_skyward(True)
+        self.load_creds()
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
@@ -360,9 +357,9 @@ class UI(QMainWindow):
         """
         Loads custom class names from file to self._class_ids
         """
-        if not os.path.exists('ReSkyward/data/CustomNames.json'):
+        if not os.path.exists('data/CustomNames.json'):
             return
-        with open('ReSkyward/data/CustomNames.json') as f:
+        with open('data/CustomNames.json') as f:
             self._class_ids = json.load(f)
 
     def error_msg_signal_handler(self, msg):
@@ -392,11 +389,11 @@ class UI(QMainWindow):
         Loads the Skyward data from database
         """
         # Return error in status bar if no data already exists
-        if not os.path.exists('ReSkyward/data'):
+        if not os.path.exists('data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
             return False
         # Load data from file
-        with open('ReSkyward/data/SkywardExport.json') as f:
+        with open('data/SkywardExport.json') as f:
             skyward_data = json.load(f)  # read data
         # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
         self.headers = skyward_data[0][0]['headers'][1:]
@@ -412,7 +409,7 @@ class UI(QMainWindow):
                 self.class_assignments.append(load)
                 # print([file_dir, load])
         # Get the last updated date of the data
-        with open('ReSkyward/data/updated.json') as f:
+        with open('data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
         return True  # return True if data was loaded successfully
 
@@ -426,8 +423,6 @@ class UI(QMainWindow):
         # show filters
         self.classesFilter.show()
         self.weeksFilter.show()
-
-        self.rememberMe = self.loginRememberCheck.isChecked()
 
         # load data to table
         self.load_custom_classnames()  # load custom class names, set to self._class_ids
@@ -514,93 +509,30 @@ class UI(QMainWindow):
         else:
             self.passwordInput.setEchoMode(QLineEdit.Password)
 
-    def login_start(self):
-        Thread(target=self.login, daemon=True).start()
+    # LOGIN SKYWARD
 
-    def login(self):
-        user = self.usernameInput.text()
-        pw = self.passwordInput.text()
-        # self.usernameInput.clear()
+    def login_button(self):
+        arguments = [self, self.usernameInput.text(), self.passwordInput.text()]
         self.passwordInput.clear()
-        self.skywardLoginButton.setEnabled(False)
+        Thread(target=login.login, args=arguments, daemon=True).start()
 
-        self.lastRefreshedLabel.setText('Refreshing...')
-        # data = self.get_user_info()
+    def refresh_button(self):
+        arguments = [self, self.skywardUsername, self.skywardPassword]
+        Thread(target=login.login, args=arguments, daemon=True).start()
 
-        # TODO: improve exception handler
-        try:
-            # login(self, user, pw)
-            scrape.GetSkywardPage(user, pw)
-        except scrape.InvalidLogin:
-            self.settings_clicked(0)
-            self.error_msg_signal.emit('Invalid login. Please try again.')
-            self.loginLabel.setText('Not logged in')
-            self.title_bar_button_clicked('settings', False)
-        except requests.exceptions.ConnectionError:
-            self.error_msg_signal.emit('Network error. Please check your internet connection.')
-        else:
-            self.database_refreshed.emit()
-            self.loginLabel.setText(f'Logged in as {user}')
-            self.helloUserLabel.setText(f'Hello {user}!')
-            # TODO: determine if we should add saving login
-            # self.save_login()
-        self.skywardLoginButton.setEnabled(True)
-
-    def save_login(self):
-        """
-        Saves the username and password as encrypted binary
-        """
-
-        # Checks if key has already been generated
-        if not os.path.exists('ReSkyward/user/aes.bin'):
-            # If key does not exist, generate and write to file a new 32-byte key
-            key = get_random_bytes(32)
-            with open('ReSkyward/user/aes.bin', 'wb') as file_out:
-                file_out.write(key)
-        else:
-            with open('ReSkyward/user/aes.bin', 'rb') as f:
-                key = f.read()
-
-        if self.rememberMe:
-            # encodes a json-formatted list containing the username and password (user login)
-            data = json.dumps([self.skywardUsername, self.skywardPassword]).encode()
-            # create cipher
-            cipher = AES.new(key, AES.MODE_EAX)
-            # encrypt user login
-            ciphertext, tag = cipher.encrypt_and_digest(data)
-            # writes encrypted user login to file
-            with open("ReSkyward/user/encrypted.bin", "wb") as file_out:
-                [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
-        else:
-            # clears user info file
-            open("ReSkyward/user/encrypted.bin", "wb").close()
-
-    def get_user_info(self):
-        # reads key from file
-        if os.path.exists('ReSkyward/user/aes.bin'):
-            with open("ReSkyward/user/aes.bin", "rb") as file_in:
-                key = file_in.read()
-        else:
-            return [self.skywardUsername, self.skywardPassword]
-
-        if os.path.exists('ReSkyward/user/encrypted.bin'):
-            # reads encrypted user info from file
-            with open("ReSkyward/user/encrypted.bin", "rb") as file_in:
-                nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
-        else:
-            return False
-
-        # generate cypher from key
-        cipher = AES.new(key, AES.MODE_EAX, nonce)
-        # decrypts user login
-        return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
+    def load_creds(self):
+        creds = login.get_login()
+        if len(creds) > 0:
+            args = [self, creds[0]['account'], creds[0]['password']]
+            Thread(target=login.login, args=args, daemon=True).start()
 
     def clear_all_user_data(self):
         # log out
         # open("user/aes.bin", "wb").close()
         # open("user/encrypted.bin", "wb").close()
-        delete_folder('ReSkyward/data')
-        # delete_folder('user')
+        delete_folder('data')
+        delete_folder('user')
+        login.clear_all_logins()
         self.loginLabel.setText('Not Logged In')
         self.skywardViewStackedWidget.setCurrentIndex(0)  # set to not logged in page
         self.classesFilter.hide()

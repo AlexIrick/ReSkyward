@@ -9,6 +9,9 @@ from mixin import *
 from main import UI
 
 if __name__ == "__main__":
+    # Changes the current directory to the directory containing the running script file
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     # initialize app
     app = QApplication(sys.argv)
     # disable DPI scaling
