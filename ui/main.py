@@ -15,7 +15,7 @@ from Crypto.Random import get_random_bytes
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
+from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem, QLineEdit
 
 import BellUI
 from mixin import *
@@ -60,6 +60,7 @@ class UI(QMainWindow):
         uic.loadUi(join(dirname(__file__), "MainWindow.ui"), self)
         self.setWindowTitle(f'ReSkyward - {version}')
         self.setWindowIcon(QtGui.QIcon(WINDOW_ICON))
+
         # set variables
         self.skywardUsername = ''
         self.skywardPassword = ''
@@ -71,23 +72,20 @@ class UI(QMainWindow):
 
         self.notesSumText = ''
 
-        #bell
+        # BELL SCHEDULE
         self.bellUI = BellUI.BellUI(self)
-
-        # hide bell
+        # hide bell view
         self.bellStackedWidget.hide()
-
         self.bellRefreshTimer = QTimer()
         self.bellRefreshTimer.setInterval(1000)  # 1 seconds
         self.bellRefreshTimer.timeout.connect(self.bellUI.refresh_view)
-
         # self.bellSettingsList.currentRowChanged.connect(lambda: self.bellUI.bell_settings_selected(False))
         self.bellDistrictsList.currentRowChanged.connect(self.bellUI.district_changed)
         self.bellSchoolsList.currentRowChanged.connect(self.bellUI.school_changed)
         self.bellGroupsList.currentRowChanged.connect(self.bellUI.group_changed)
-
         self.bellToggleButton.clicked.connect(self.bellUI.bell_toggle)
 
+        # UI Finetuning
         # set minimum width
         self.weeksFilter.setSpacing(5)
         self.weeksFilter.setFixedWidth(
@@ -103,6 +101,7 @@ class UI(QMainWindow):
 
         self.experimentTree.header().resizeSection(1, 50)
 
+        # DASHBOARD
         # set button connections; x = is checked when button is checkable
         self.dashboardButton.clicked.connect(
             lambda x: self.title_bar_button_clicked('dashboard', x)
@@ -147,8 +146,9 @@ class UI(QMainWindow):
         # hide experiment
         self.experimentGroup.hide()
 
-        # set icons
-        # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
+
+        # SKYWARD LOGIN
+        self.showPasswordCheck.stateChanged.connect(self.set_password_visibility)
 
         # config
         self.hideCitizenCheck.stateChanged.connect(lambda: self.config.set_hide_citizen(self.hideCitizenCheck.isChecked()))
@@ -507,6 +507,12 @@ class UI(QMainWindow):
                 bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
         ):  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
+
+    def set_password_visibility(self, checked):
+        if checked:
+            self.passwordInput.setEchoMode(QLineEdit.Normal)
+        else:
+            self.passwordInput.setEchoMode(QLineEdit.Password)
 
     def login_start(self):
         Thread(target=self.login, daemon=True).start()

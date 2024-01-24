@@ -81,6 +81,9 @@
         <property name="checkable">
          <bool>true</bool>
         </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
         <property name="flat">
          <bool>true</bool>
         </property>
@@ -107,7 +110,7 @@
          <bool>true</bool>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="flat">
          <bool>true</bool>
@@ -231,7 +234,7 @@
     <item>
      <widget class="QStackedWidget" name="tabsStackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -1797,8 +1800,8 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>191</width>
-                       <height>388</height>
+                       <width>662</width>
+                       <height>365</height>
                       </rect>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_5">
