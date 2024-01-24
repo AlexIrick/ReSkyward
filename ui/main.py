@@ -1,10 +1,7 @@
-import contextlib
 import ctypes as ct
-import json
 import os
-import queue
-import shutil
 import sys
+import json
 from itertools import chain
 from os.path import dirname, join
 from threading import Thread
@@ -20,8 +17,10 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
 
+import BellUI
 from mixin import *
-import BellSchedule, skyward
+import scrape, config
+
 
 import experimentmode, skywardview
 
@@ -54,20 +53,7 @@ class UI(QMainWindow):
 
     def __init__(self):
         super(UI, self).__init__()
-        self.current_selected_school = None
-        self.current_selected_district = None
-        self.selected_school = None
-        self.bell_schedule = None
-        self.bell_group_id = None
-        self.bell_groups = None
-        self.bell_school_id = None
-        self.bell_schools = None
-        self.bell_districts = None
-        self.sess = None
-        self.bell_district_id = None
-        self.bell_districts_dict = {}
-        self.bell_schools_dict = {}
-        self.bell_groups_dict = {}
+
         self.class_assignments = []
         self.assignment_files = None
         self.skyward_data = None
@@ -85,18 +71,22 @@ class UI(QMainWindow):
 
         self.notesSumText = ''
 
-        # create config
-        self.settings = {
-            "skyward": {
-                "hideCitizen": self.hideCitizenCheck.isChecked(),
-            },
-            "bellSchedule": {
-                "districtID": None,
-                "schoolID": None,
-                "groupID": None,
-            },
-        }
-        self.hideCitizen = False
+        #bell
+        self.bellUI = BellUI.BellUI(self)
+
+        # hide bell
+        self.bellStackedWidget.hide()
+
+        self.bellRefreshTimer = QTimer()
+        self.bellRefreshTimer.setInterval(1000)  # 1 seconds
+        self.bellRefreshTimer.timeout.connect(self.bellUI.refresh_view)
+
+        # self.bellSettingsList.currentRowChanged.connect(lambda: self.bellUI.bell_settings_selected(False))
+        self.bellDistrictsList.currentRowChanged.connect(self.bellUI.district_changed)
+        self.bellSchoolsList.currentRowChanged.connect(self.bellUI.school_changed)
+        self.bellGroupsList.currentRowChanged.connect(self.bellUI.group_changed)
+
+        self.bellToggleButton.clicked.connect(self.bellUI.bell_toggle)
 
         # set minimum width
         self.weeksFilter.setSpacing(5)
@@ -131,8 +121,6 @@ class UI(QMainWindow):
         self.experimentAddButton.clicked.connect(self.experiment_add)
         self.experimentRemoveButton.clicked.connect(self.experiment_remove)
 
-        self.bellToggleButton.clicked.connect(self.bell_toggle)
-
         # list connections; x = item clicked
         self.classesFilter.itemClicked.connect(lambda: self.filter_selected('class'))
         self.weeksFilter.itemClicked.connect(lambda: self.filter_selected('week'))
@@ -158,20 +146,14 @@ class UI(QMainWindow):
         self.weeksFilter.hide()
         # hide experiment
         self.experimentGroup.hide()
-        # hide bell
-        self.bellStackedWidget.hide()
-
-        self.bellRefreshTimer = QTimer()
-        self.bellRefreshTimer.setInterval(1000)  # 1 seconds
-        self.bellRefreshTimer.timeout.connect(self.refresh_bell_view)
-
-        self.bellDistrictsList.currentRowChanged.connect(self.bell_schedule_changed)
-        self.bellSettingsList.currentRowChanged.connect(self.bell_settings_selected)
-
-        self.bellData = {}
 
         # set icons
         # self.bellToggleButton.setIcon(QtGui.QIcon('img/alarm.svg'))
+
+        # config
+        self.hideCitizenCheck.stateChanged.connect(lambda: self.config.set_hide_citizen(self.hideCitizenCheck.isChecked()))
+        self.hideCitizen = False
+        self.config = config.Config(self)
 
         # set dark title bar
         # username = get_user_info()[0]
@@ -185,177 +167,9 @@ class UI(QMainWindow):
             os.mkdir('user')
 
         self.logged_in = self.load_skyward(True)
-        self.load_config()
 
     database_refreshed = pyqtSignal()
     error_msg_signal = pyqtSignal(str)
-
-    """
-    ---Bell scraper---
-    """
-
-    def bell_set_enabled(self, should_enable):
-        if should_enable:
-            # Show bell container
-            self.bellStackedWidget.show()
-            self.bellToggleButton.setText('')
-            self.bellToggleButton.setFont(QFont('Segoe MDL2 Assets', 14))
-            Thread(
-                target=self.get_bell_data,
-                # args=None,
-                daemon=True,
-            ).start()
-            self.bellRefreshTimer.start()
-            # self.get_bell_data()
-        else:
-            self.bellStackedWidget.hide()
-            self.bellToggleButton.setText('🔔')
-            self.bellToggleButton.setFont(QFont('Poppins', 13))
-            self.bellRefreshTimer.stop()
-
-    def bell_toggle(self):
-        """
-        Toggles bell schedule view
-        """
-        self.bell_set_enabled(self.bellStackedWidget.isHidden())
-
-    def bell_refresh_start_thread(self):
-        # print('timed out')
-        Thread(
-            target=self.refresh_bell_view,
-            # args=None,
-            daemon=True,
-        ).start()
-
-    def bell_settings_selected(self, from_config=False):
-        # Create session
-        if not self.sess:
-            self.sess = BellSchedule.create_session()
-
-        # Get districts
-        if not self.bell_districts:
-            self.bell_districts = BellSchedule.get_districts(self.sess)
-            # Add districts to list view in settings
-            self.show_bell_districts(self.bell_districts)
-        # Get district id
-        if self.bellDistrictsList.currentRow() != -1 and not from_config:
-            self.bell_district_id = self.bell_districts_dict[
-                str(self.bellDistrictsList.currentItem())
-            ][0]
-
-        if not self.bell_district_id:
-            return
-        selected_district = self.bell_districts[self.bell_district_id]
-
-        # Get Schools
-        if not self.bell_schools or (
-            self.current_selected_district is not None
-            and self.current_selected_district != selected_district
-        ):
-            self.current_selected_district = selected_district
-            self.bell_schools = BellSchedule.get_schools(self.sess, selected_district)
-            # Add schools to list view in settings
-            self.show_bell_schools(self.bell_schools)
-            if not from_config:
-                self.bell_school_id = None
-        # Get school id
-        if self.bellSchoolsList.currentRow() != -1 and not from_config:
-            self.bell_school_id = self.bell_schools_dict[str(self.bellSchoolsList.currentItem())][0]
-        if not self.bell_school_id:
-            return
-        selected_school = self.bell_schools[self.bell_school_id]
-
-        # Get groups
-        if not self.bell_groups or (
-            self.current_selected_school is not None
-            and self.current_selected_school != selected_school
-        ):
-            self.current_selected_school = selected_school
-            self.bell_groups, self.bell_schedule = BellSchedule.get_groups(
-                self.sess, selected_school
-            )
-            # Add groups to list view in settings
-            self.show_bell_groups(self.bell_groups)
-            if not from_config:
-                self.bell_group_id = None
-        self.bell_set_enabled(False)
-
-    def get_bell_data(self):
-        """
-        Gets bell schedule data
-        """
-        # Get selected group id
-        if self.bellGroupsList.currentRow() != -1:
-            self.bell_group_id = self.bell_groups_dict[str(self.bellGroupsList.currentItem())][0]
-        if not self.bell_group_id:
-            self.bellStackedWidget.setCurrentIndex(1)
-            return
-        else:
-            self.bellStackedWidget.setCurrentIndex(2)
-        selected_group = self.bell_groups[self.bell_group_id]
-
-        rules = BellSchedule.get_rules(self.sess, selected_group, self.bell_schedule)
-        result = BellSchedule.get_schedule(self.sess, self.current_selected_school, rules)
-
-        self.bellCountdownGroup.setTitle(result[0]['selected_school'].name)
-        self.bellData = result[0]
-        if result[1] == "no school":
-            self.bellData['is_school'] = False
-
-        if 'today_schedule' in self.bellData and not self.bellData['today_schedule']:
-            # If today's schedule is empty (holiday)
-            self.bellData['is_school'] = False
-        self.refresh_bell_view()
-
-    def show_bell_districts(self, districts):
-        for district in districts.items():
-            item = QListWidgetItem()
-            item.setText(district[1].name.strip())
-            self.bell_districts_dict[str(item)] = district
-            self.bellDistrictsList.addItem(item)
-
-    def show_bell_schools(self, schools):
-        self.bell_schools_dict.clear()
-        self.bellSchoolsList.clear()
-        # self.bellSchoolsList.setCurrentRow(-1)
-        for school in schools.items():
-            item = QListWidgetItem()
-            item.setText(school[1].name)
-            self.bell_schools_dict[str(item)] = school
-            self.bellSchoolsList.addItem(item)
-
-    def show_bell_groups(self, groups):
-        self.bell_groups_dict.clear()
-        self.bellGroupsList.clear()
-        for group in groups.items():
-            item = QListWidgetItem()
-            item.setText(group[1].name)
-            self.bell_groups_dict[str(item)] = group
-            self.bellGroupsList.addItem(item)
-
-    def bell_schedule_changed(self):
-        Thread(
-            target=self.get_bell_data,
-            # args=None,
-            daemon=True,
-        ).start()
-
-    def refresh_bell_view(self):
-        """
-        Refreshes bell page but not if on settings page.
-        Called by QTimer Event
-        """
-        if self.bellStackedWidget.currentIndex() == 1:
-            return
-        if display_data := BellSchedule.get_relevant_schedule_info(self.bellData):
-            if 'selected_school' in self.bellData:
-                self.bellCountdownGroup.setTitle(self.bellData['selected_school'].name)
-            if 'today' in self.bellData:
-                self.bellDayLabel.setText(self.bellData['today'].name)
-            self.bellCurrentLabel.setText(display_data['current_period'])
-            self.bellCountdownLabel.setText(display_data['time_left'])
-            self.bellNextLabel.setText(display_data['next_period'])
-            self.bellStackedWidget.setCurrentIndex(0)
 
     """
     ---Experiment---
@@ -546,9 +360,9 @@ class UI(QMainWindow):
         """
         Loads custom class names from file to self._class_ids
         """
-        if not os.path.exists('data/CustomNames.json'):
+        if not os.path.exists('ReSkyward/data/CustomNames.json'):
             return
-        with open('data/CustomNames.json') as f:
+        with open('ReSkyward/data/CustomNames.json') as f:
             self._class_ids = json.load(f)
 
     def error_msg_signal_handler(self, msg):
@@ -559,7 +373,7 @@ class UI(QMainWindow):
         self.message_box('ReSkyward - Error', msg)
 
     def message_box(
-        self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok
+            self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok
     ):
         """
         Displays a message box with the given title, text, icon, and buttons
@@ -578,11 +392,11 @@ class UI(QMainWindow):
         Loads the Skyward data from database
         """
         # Return error in status bar if no data already exists
-        if not os.path.exists('data'):
+        if not os.path.exists('ReSkyward/data'):
             self.lastRefreshedLabel.setText('Please log into Skyward')
             return False
         # Load data from file
-        with open('data/SkywardExport.json') as f:
+        with open('ReSkyward/data/SkywardExport.json') as f:
             skyward_data = json.load(f)  # read data
         # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
         self.headers = skyward_data[0][0]['headers'][1:]
@@ -598,7 +412,7 @@ class UI(QMainWindow):
                 self.class_assignments.append(load)
                 # print([file_dir, load])
         # Get the last updated date of the data
-        with open('data/updated.json') as f:
+        with open('ReSkyward/data/updated.json') as f:
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
         return True  # return True if data was loaded successfully
 
@@ -660,11 +474,11 @@ class UI(QMainWindow):
         }
 
         # save settings if clicking off of settings tab
-        if (
-            self.tabsStackedWidget.currentIndex() == _buttons['settings'][1]
-            and button_ref != 'settings'
-        ):
-            self.save_settings()
+        # if (
+        #         self.tabsStackedWidget.currentIndex() == _buttons['settings'][1]
+        #         and button_ref != 'settings'
+        # ):
+        #     # self.save_settings()
 
         # Uncheck all buttons
         for b in _buttons.values():
@@ -678,6 +492,7 @@ class UI(QMainWindow):
     ---Settings---
     """
 
+    # TODO: improve this (horrible) system
     def settings_clicked(self, index, bell_index=-1):
         """
         Called when a settings button is clicked. Shows settings page and selects settings category
@@ -689,31 +504,9 @@ class UI(QMainWindow):
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
         if (
-            bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
+                bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
         ):  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
-
-    def save_settings(self):
-        # save to config
-        self.hideCitizen = self.hideCitizenCheck.isChecked()
-        if 'skyward' not in self.settings:
-            self.settings["skyward"] = {}
-        self.settings["skyward"]["hideCitizen"] = self.hideCitizen
-        # if self.settingsCategoriesList.currentRow() == 3:  # only works on bell page
-
-        self.bell_settings_selected()
-        self.get_bell_data()
-        if 'bellSchedule' not in self.settings:
-            self.settings["bellSchedule"] = {}
-        self.settings["bellSchedule"]["districtID"] = self.bell_district_id
-        self.settings["bellSchedule"]["schoolID"] = self.bell_school_id
-        self.settings["bellSchedule"]["groupID"] = self.bell_group_id
-
-        with open('user/config.json', 'w') as f:
-            f.write('')
-            json.dump(self.settings, f, indent=4)
-        # load objects
-        self.load_config_objects()
 
     def login_start(self):
         Thread(target=self.login, daemon=True).start()
@@ -731,8 +524,8 @@ class UI(QMainWindow):
         # TODO: improve exception handler
         try:
             # login(self, user, pw)
-            skyward.GetSkywardPage(user, pw)
-        except skyward.InvalidLogin:
+            scrape.GetSkywardPage(user, pw)
+        except scrape.InvalidLogin:
             self.settings_clicked(0)
             self.error_msg_signal.emit('Invalid login. Please try again.')
             self.loginLabel.setText('Not logged in')
@@ -744,44 +537,8 @@ class UI(QMainWindow):
             self.loginLabel.setText(f'Logged in as {user}')
             self.helloUserLabel.setText(f'Hello {user}!')
             # TODO: determine if we should add saving login
-            #self.save_login()
+            # self.save_login()
         self.skywardLoginButton.setEnabled(True)
-
-    def load_config(self):
-        """
-        Loads saved settings/config
-        """
-        if os.path.exists('user/config.json'):
-            with open('user/config.json', 'r') as f:
-                self.settings = json.load(f)
-            if "skyward" in self.settings:
-                if 'hideCitizen' in self.settings["skyward"]:
-                    self.hideCitizen = self.settings["skyward"]["hideCitizen"]
-
-            if "bellSchedule" in self.settings:
-                if 'districtID' in self.settings["bellSchedule"]:
-                    self.bell_district_id = self.settings["bellSchedule"]["districtID"]
-                if 'schoolID' in self.settings["bellSchedule"]:
-                    self.bell_school_id = self.settings["bellSchedule"]["schoolID"]
-                if 'groupID' in self.settings["bellSchedule"]:
-                    self.bell_group_id = self.settings["bellSchedule"]["groupID"]
-            self.load_config_objects()
-            self.save_settings()
-
-    def load_config_objects(self):
-        """
-        Loads items/objects related to settings
-        """
-        if self.logged_in:
-            self.hideCitizenCheck.setChecked(self.hideCitizen)
-            self.hide_skyward_table_columns()
-
-        # self.sess = BellSchedule.create_session()
-        # selected_school = self.bell_schools[self.bell_school_id]
-        # self.bell_groups, self.bell_schedule = BellSchedule.get_groups(self.sess, selected_school)
-
-        self.bell_settings_selected(True)
-        self.get_bell_data()
 
     def save_login(self):
         """
@@ -789,13 +546,13 @@ class UI(QMainWindow):
         """
 
         # Checks if key has already been generated
-        if not os.path.exists('user/aes.bin'):
+        if not os.path.exists('ReSkyward/user/aes.bin'):
             # If key does not exist, generate and write to file a new 32-byte key
             key = get_random_bytes(32)
-            with open('user/aes.bin', 'wb') as file_out:
+            with open('ReSkyward/user/aes.bin', 'wb') as file_out:
                 file_out.write(key)
         else:
-            with open('user/aes.bin', 'rb') as f:
+            with open('ReSkyward/user/aes.bin', 'rb') as f:
                 key = f.read()
 
         if self.rememberMe:
@@ -806,23 +563,23 @@ class UI(QMainWindow):
             # encrypt user login
             ciphertext, tag = cipher.encrypt_and_digest(data)
             # writes encrypted user login to file
-            with open("user/encrypted.bin", "wb") as file_out:
+            with open("ReSkyward/user/encrypted.bin", "wb") as file_out:
                 [file_out.write(x) for x in (cipher.nonce, tag, ciphertext)]
         else:
             # clears user info file
-            open("user/encrypted.bin", "wb").close()
+            open("ReSkyward/user/encrypted.bin", "wb").close()
 
     def get_user_info(self):
         # reads key from file
-        if os.path.exists('user/aes.bin'):
-            with open("user/aes.bin", "rb") as file_in:
+        if os.path.exists('ReSkyward/user/aes.bin'):
+            with open("ReSkyward/user/aes.bin", "rb") as file_in:
                 key = file_in.read()
         else:
             return [self.skywardUsername, self.skywardPassword]
 
-        if os.path.exists('user/encrypted.bin'):
+        if os.path.exists('ReSkyward/user/encrypted.bin'):
             # reads encrypted user info from file
-            with open("user/encrypted.bin", "rb") as file_in:
+            with open("ReSkyward/user/encrypted.bin", "rb") as file_in:
                 nonce, tag, ciphertext = [file_in.read(x) for x in (16, 16, -1)]
         else:
             return False
@@ -836,8 +593,8 @@ class UI(QMainWindow):
         # log out
         # open("user/aes.bin", "wb").close()
         # open("user/encrypted.bin", "wb").close()
-        delete_folder('data')
-        delete_folder('user')
+        delete_folder('ReSkyward/data')
+        # delete_folder('user')
         self.loginLabel.setText('Not Logged In')
         self.skywardViewStackedWidget.setCurrentIndex(0)  # set to not logged in page
         self.classesFilter.hide()
@@ -859,9 +616,9 @@ def dark_title_bar(hwnd):
     Windows 10: Sets color to black
     """
     if not (
-        UI.DARK_MODE
-        and sys.platform == 'win32'
-        and (version_num := sys.getwindowsversion()).major == 10
+            UI.DARK_MODE
+            and sys.platform == 'win32'
+            and (version_num := sys.getwindowsversion()).major == 10
     ):
         return
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute

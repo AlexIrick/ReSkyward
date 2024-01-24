@@ -9,3 +9,4 @@ __pycache__
 encrypted.bin
 aes.bin
 config.json
+user/settings_config.json
