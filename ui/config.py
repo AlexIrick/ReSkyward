@@ -4,12 +4,14 @@ from pyqtconfig import ConfigManager
 class Config:
     def __init__(self, app):
         self.config = ConfigManager(filename="/user/settings_config.json")
-        self.config.set_defaults({
-            'hideCitizen': False,
-            'refreshOnLaunch': False,
-            'lastRefreshed': None,
-            'bellIDs': [None, None, None],
-        })
+        self.config.set_defaults(
+            {
+                'hideCitizen': False,
+                'refreshOnLaunch': False,
+                'lastRefreshed': None,
+                'bellIDs': [None, None, None],
+            }
+        )
         self.app = app
         self.load()
 
@@ -42,4 +44,3 @@ class Config:
     def set_bell_schedule_ids(self, bell_ids):
         self.config.set('bellIDs', bell_ids)
         self.save()
-

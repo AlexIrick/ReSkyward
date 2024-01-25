@@ -5,8 +5,8 @@ import darkdetect
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication
 
-from mixin import *
-from main import UI
+from ReSkyward.mixin import *
+from ReSkyward.ui.main import UI
 
 if __name__ == "__main__":
     # Changes the current directory to the directory containing the running script file

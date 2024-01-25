@@ -1,6 +1,7 @@
 import pycreds
-import scrape
 import requests.exceptions
+
+from ReSkyward.scr import scrape
 
 service = 'ReSkyward'
 
@@ -69,4 +70,3 @@ if __name__ == "__main__":
     save_login("user", 'pass')
     # clear_all_logins()
     print(get_login())
-

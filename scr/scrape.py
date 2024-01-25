@@ -1,12 +1,15 @@
-from tls_client import Session
-from functools import cached_property
-from bs4 import BeautifulSoup as bs, SoupStrainer as ss
-import time
-import re
-import yaml
 import getpass
-import parser
-from typing import Optional, Dict
+import re
+import time
+from functools import cached_property
+from typing import Dict, Optional
+
+import yaml
+from bs4 import BeautifulSoup as bs
+from bs4 import SoupStrainer as ss
+from tls_client import Session
+
+from ReSkyward.scr import parser
 
 
 class InvalidLogin(Exception):

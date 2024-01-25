@@ -1,9 +1,9 @@
-from PyQt5.QtGui import QFont
 from threading import Thread
 
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QListWidgetItem
 
-import BellSchedule
+from ReSkyward.scr import BellSchedule
 
 
 class BellUI:
@@ -30,10 +30,7 @@ class BellUI:
         # Start session
         self.sess = BellSchedule.create_session()
         # Scrape districts
-        Thread(
-            target=self.scrape_districts,
-            daemon=True
-        ).start()
+        Thread(target=self.scrape_districts, daemon=True).start()
 
     def set_bell_ids(self, bell_ids):
         """
@@ -63,8 +60,11 @@ class BellUI:
             self.bell_ids[0] = None
 
         # scrape Groups if has district and school id AND school id is found in school scraper object dictionary
-        if (self.bell_ids[0] is not None and self.bell_ids[1] is not None
-                and self.bell_ids[1] in self.schools_scraper_dict):
+        if (
+            self.bell_ids[0] is not None
+            and self.bell_ids[1] is not None
+            and self.bell_ids[1] in self.schools_scraper_dict
+        ):
             self.scrape_groups()
             self.app.bellSchoolsList.setCurrentRow(self.get_list_current_row(1))
         else:
@@ -72,7 +72,9 @@ class BellUI:
 
         # if bell_ids has None in it OR if group id is NOT found in groups scraper object dictionary
         if None not in self.bell_ids and self.bell_ids[2] in self.groups_scraper_dict:
-            self.app.bellGroupsList.setCurrentRow(self.get_list_current_row(2))  # TODO: (BUG) Not updating current row, returns correct index
+            self.app.bellGroupsList.setCurrentRow(
+                self.get_list_current_row(2)
+            )  # TODO: (BUG) Not updating current row, returns correct index
         else:
             # reset group id
             self.bell_ids[2] = None
@@ -170,7 +172,9 @@ class BellUI:
             self.row_changed_finish()
 
     def scrape_schools(self):
-        self.schools_scraper_dict = BellSchedule.get_schools(self.sess, self.get_district_scraper_obj())
+        self.schools_scraper_dict = BellSchedule.get_schools(
+            self.sess, self.get_district_scraper_obj()
+        )
 
         # Populate scraped schools into school list view
         self.show_bell_schools(self.schools_scraper_dict)

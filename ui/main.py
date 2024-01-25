@@ -1,7 +1,7 @@
 import ctypes as ct
+import json
 import os
 import sys
-import json
 from itertools import chain
 from os.path import dirname, join
 from threading import Thread
@@ -12,14 +12,10 @@ import darkdetect
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem, QLineEdit
+from PyQt5.QtWidgets import QApplication, QLineEdit, QListWidgetItem, QMainWindow, QTreeWidgetItem
 
-import BellUI
-from mixin import *
-import config
-import login
-
-import experimentmode, skywardview
+from ReSkyward.mixin import *
+from ReSkyward.ui import BellUI, config, experimentmode, login, skywardview
 
 # from qt_material import list_themes, apply_stylesheet
 
@@ -153,7 +149,8 @@ class UI(QMainWindow):
         self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)
 
         self.refreshOnLaunchCheck.stateChanged.connect(
-            lambda: self.config.set_refresh_on_launch(self.refreshOnLaunchCheck.isChecked()))
+            lambda: self.config.set_refresh_on_launch(self.refreshOnLaunchCheck.isChecked())
+        )
 
         self.tabsStackedWidget.setCurrentIndex(0)
 
@@ -375,7 +372,7 @@ class UI(QMainWindow):
         self.message_box('ReSkyward - Error', msg)
 
     def message_box(
-            self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok
+        self, title, text, icon=QtWidgets.QMessageBox.Critical, buttons=QtWidgets.QMessageBox.Ok
     ):
         """
         Displays a message box with the given title, text, icon, and buttons
@@ -500,7 +497,7 @@ class UI(QMainWindow):
         if index != -1:
             self.settingsCategoriesList.setCurrentRow(index)
         if (
-                bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
+            bell_index != -1 and self.settingsCategoriesList.currentRow() == 3
         ):  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
 
@@ -568,9 +565,9 @@ def dark_title_bar(hwnd):
     Windows 10: Sets color to black
     """
     if not (
-            UI.DARK_MODE
-            and sys.platform == 'win32'
-            and (version_num := sys.getwindowsversion()).major == 10
+        UI.DARK_MODE
+        and sys.platform == 'win32'
+        and (version_num := sys.getwindowsversion()).major == 10
     ):
         return
     set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute

@@ -1,12 +1,12 @@
-import orjson
 import os
 import re
 from datetime import datetime
 
+import orjson
 from bs4 import BeautifulSoup as bs
 from titlecase import titlecase
 
-import sqlgrades
+from ReSkyward.scr import sqlgrades
 
 
 def dump(data, iostream):
