@@ -25,10 +25,13 @@ def get_login():
     return pycreds.find_credentials(service)
 
 
+def has_saved_logins():
+    return len(get_login()) > 0
+
+
 # UI
 def login(app, user, pw):
     app.skywardLoginButton.setEnabled(False)
-    app.rememberMe = app.loginRememberCheck.isChecked()
 
     app.lastRefreshedLabel.setText('Refreshing...')
     # data = self.get_user_info()
@@ -54,8 +57,8 @@ def login(app, user, pw):
         app.database_refreshed.emit()
         app.loginLabel.setText(f'Logged in as {user}')
         app.helloUserLabel.setText(f'Hello {user}!')
-        # TODO: determine if we should add saving login
-        if app.rememberMe:
+
+        if app.loginRememberCheck.isChecked():
             save_login(user, pw)
         app.skywardUsername = user
         app.skywardPassword = pw

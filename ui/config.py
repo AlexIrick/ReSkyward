@@ -3,10 +3,12 @@ from pyqtconfig import ConfigManager
 
 class Config:
     def __init__(self, app):
-        self.config = ConfigManager(filename="ReSkyward/user/settings_config.json")
+        self.config = ConfigManager(filename="/user/settings_config.json")
         self.config.set_defaults({
             'hideCitizen': False,
-            'bell_ids': [None, None, None],
+            'refreshOnLaunch': False,
+            'lastRefreshed': None,
+            'bellIDs': [None, None, None],
         })
         self.app = app
         self.load()
@@ -15,7 +17,10 @@ class Config:
         self.app.hideCitizen = self.config.get('hideCitizen')
         self.app.hideCitizenCheck.setChecked(self.app.hideCitizen)
 
-        bell_ids = self.config.get('bell_ids')
+        self.app.ref_on_launch = self.config.get('refreshOnLaunch')
+        self.app.refreshOnLaunchCheck.setChecked(self.app.ref_on_launch)
+
+        bell_ids = self.config.get('bellIDs')
         if bell_ids[0] is not None:
             self.app.bellUI.set_bell_ids(bell_ids)
 
@@ -28,7 +33,13 @@ class Config:
 
         self.app.hideCitizen = hide_citizen
 
+    def set_refresh_on_launch(self, ref_on_launch: bool):
+        self.config.set('refreshOnLaunch', ref_on_launch)
+        self.save()
+
+        self.app.ref_on_launch = ref_on_launch
+
     def set_bell_schedule_ids(self, bell_ids):
-        self.config.set('bell_ids', bell_ids)
+        self.config.set('bellIDs', bell_ids)
         self.save()
 

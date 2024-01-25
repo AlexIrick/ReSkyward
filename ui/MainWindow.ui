@@ -73,6 +73,8 @@
          <font>
           <family>Poppins Medium</family>
           <pointsize>12</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
          </font>
         </property>
         <property name="text">
@@ -505,7 +507,7 @@
                       <widget class="QPushButton" name="settingsBellButton">
                        <property name="font">
                         <font>
-                         <family>Poppins</family>
+                         <family>Poppins Medium</family>
                          <pointsize>9</pointsize>
                         </font>
                        </property>
@@ -559,7 +561,7 @@
                     <widget class="QLabel" name="label_5">
                      <property name="font">
                       <font>
-                       <family>Poppins</family>
+                       <family>Poppins Medium</family>
                        <pointsize>15</pointsize>
                       </font>
                      </property>
@@ -652,7 +654,7 @@
                     <widget class="QLabel" name="label_15">
                      <property name="font">
                       <font>
-                       <family>Poppins</family>
+                       <family>Poppins Medium</family>
                        <pointsize>15</pointsize>
                       </font>
                      </property>
@@ -783,7 +785,7 @@
               </property>
               <property name="font">
                <font>
-                <family>Poppins</family>
+                <family>Poppins Medium</family>
                 <pointsize>10</pointsize>
                </font>
               </property>
@@ -855,7 +857,7 @@
                  <widget class="QLabel" name="label_3">
                   <property name="font">
                    <font>
-                    <family>Poppins</family>
+                    <family>Poppins Medium</family>
                     <pointsize>22</pointsize>
                    </font>
                   </property>
@@ -899,7 +901,7 @@
                    <widget class="QPushButton" name="settingsLoginButton">
                     <property name="font">
                      <font>
-                      <family>Poppins</family>
+                      <family>Poppins Medium</family>
                       <pointsize>9</pointsize>
                      </font>
                     </property>
@@ -1101,7 +1103,7 @@
                        </property>
                        <property name="font">
                         <font>
-                         <family>Poppins</family>
+                         <family>Poppins Medium</family>
                          <pointsize>9</pointsize>
                         </font>
                        </property>
@@ -1727,6 +1729,8 @@
                <font>
                 <family>Poppins Medium</family>
                 <pointsize>10</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="currentRow">
@@ -1800,8 +1804,8 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>662</width>
-                       <height>365</height>
+                       <width>641</width>
+                       <height>388</height>
                       </rect>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -2101,7 +2105,7 @@
                    <widget class="QLabel" name="label_4">
                     <property name="font">
                      <font>
-                      <family>Poppins</family>
+                      <family>Poppins Medium</family>
                       <pointsize>14</pointsize>
                      </font>
                     </property>
@@ -2114,7 +2118,7 @@
                    <widget class="QCheckBox" name="hideCitizenCheck">
                     <property name="font">
                      <font>
-                      <family>Poppins</family>
+                      <family>Poppins Medium</family>
                      </font>
                     </property>
                     <property name="text">
@@ -2122,6 +2126,18 @@
                     </property>
                     <property name="checked">
                      <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="refreshOnLaunchCheck">
+                    <property name="font">
+                     <font>
+                      <family>Poppins Medium</family>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Auto refresh on launch</string>
                     </property>
                    </widget>
                   </item>

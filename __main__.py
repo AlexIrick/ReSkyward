@@ -3,7 +3,7 @@ from glob import glob
 
 import darkdetect
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QListWidgetItem, QMainWindow, QTreeWidgetItem
+from PyQt5.QtWidgets import QApplication
 
 from mixin import *
 from main import UI
@@ -53,8 +53,6 @@ if __name__ == "__main__":
     # Create window
     MainWindow = QtWidgets.QMainWindow()
 
-    # apply_stylesheet(app, theme='dark_cyan.xml')
-
     window = UI()
     splash.hide()
     window.show()
@@ -62,5 +60,5 @@ if __name__ == "__main__":
 
     # runs after program is closed
     # deletes user data if remember me was not toggled on login
-    if not window.rememberMe:
-        delete_folder('data')
+    # if not window.login.has_saved_logins():
+    #     delete_folder('data')

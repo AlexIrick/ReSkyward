@@ -148,9 +148,14 @@ class UI(QMainWindow):
         self.showPasswordCheck.stateChanged.connect(self.set_password_visibility)
 
         # config
-        self.hideCitizenCheck.stateChanged.connect(lambda: self.config.set_hide_citizen(self.hideCitizenCheck.isChecked()))
-        self.hideCitizen = False
         self.config = config.Config(self)
+
+        self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)
+
+        self.refreshOnLaunchCheck.stateChanged.connect(
+            lambda: self.config.set_refresh_on_launch(self.refreshOnLaunchCheck.isChecked()))
+
+        self.tabsStackedWidget.setCurrentIndex(0)
 
         # set dark title bar
         # username = get_user_info()[0]
@@ -414,6 +419,7 @@ class UI(QMainWindow):
         return True  # return True if data was loaded successfully
 
     def load_skyward(self, reload=True):
+        # TODO: fix this; kinda convoluted
         """
         Update the Skyward table UI with the data from the database
         """
@@ -453,6 +459,8 @@ class UI(QMainWindow):
             # set class name vertical header in table
             self.skywardTable.setVerticalHeaderItem(n, table_item)
 
+        self.filter_selected('')
+
         return True
 
     def title_bar_button_clicked(self, button_ref, checked):
@@ -467,13 +475,6 @@ class UI(QMainWindow):
             'notes': [self.notesButton, 3],
             'settings': [self.settingsButton, 4],
         }
-
-        # save settings if clicking off of settings tab
-        # if (
-        #         self.tabsStackedWidget.currentIndex() == _buttons['settings'][1]
-        #         and button_ref != 'settings'
-        # ):
-        #     # self.save_settings()
 
         # Uncheck all buttons
         for b in _buttons.values():
@@ -503,6 +504,10 @@ class UI(QMainWindow):
         ):  # only works on bell page
             self.bellSettingsList.setCurrentRow(bell_index)
 
+    def set_hide_citizen(self):
+        self.config.set_hide_citizen(self.hideCitizenCheck.isChecked())
+        self.filter_selected('')
+
     def set_password_visibility(self, checked):
         if checked:
             self.passwordInput.setEchoMode(QLineEdit.Normal)
@@ -521,10 +526,19 @@ class UI(QMainWindow):
         Thread(target=login.login, args=arguments, daemon=True).start()
 
     def load_creds(self):
-        creds = login.get_login()
-        if len(creds) > 0:
+        if login.has_saved_logins():
+            creds = login.get_login()
             args = [self, creds[0]['account'], creds[0]['password']]
-            Thread(target=login.login, args=args, daemon=True).start()
+            if self.ref_on_launch:
+                # load skyward if refresh on launch (setting) is enabled
+                Thread(target=login.login, args=args, daemon=True).start()
+            else:
+                # else just save the pass and username as a variable so that the user can just click refresh
+                self.skywardUsername = creds[0]['account']
+                self.skywardPassword = creds[0]['password']
+                self.load_skyward()
+        else:
+            self.load_skyward()
 
     def clear_all_user_data(self):
         # log out
