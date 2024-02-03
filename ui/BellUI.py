@@ -66,6 +66,7 @@ class BellUI:
         Thread(target=self.scrape_districts, daemon=True).start()
         
     def start_bell_timer(self):
+        self.refresh_view()
         self.app.bellRefreshTimer.start()
         
     def set_search_edit(self, search_edit, items):
@@ -184,6 +185,8 @@ class BellUI:
             self.app.bellCountdownLabel.setText(display_data['time_left'])
             self.app.bellNextLabel.setText(display_data['next_period'])
             self.app.bellStack.setCurrentIndex(1)
+        
+
 
     def scrape_districts(self):
         self.districts_scraper_dict = BellSchedule.get_districts(self.sess)
@@ -335,7 +338,7 @@ class BellUI:
             self.bellData['is_school'] = False
 
         self.app.schedule_loaded.emit()
-        self.refresh_view()
+        
 
 
     def show_bell_districts(self):
