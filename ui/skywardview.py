@@ -1,5 +1,234 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QTreeWidgetItem
+import os
+from os.path import dirname, join
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QTreeWidgetItem, QTableWidgetItem, QListWidgetItem
+import json
+from itertools import chain
+from qfluentwidgets import TableWidget
+from PyQt5.QtCore import Qt
+
+
+class SkywardView():
+    def __init__(self, app):
+        self.app = app
+
+        # Override the qfluent widgets default stylesheet
+        app.skywardTable.setStyleSheet('')
+        app.skywardTable.setBorderVisible(True)
+        
+        # Data variables
+        self.class_assignments = []
+        self._class_ids = {}
+        
+        app.skywardTable.currentCellChanged.connect(self.currentCellChanged)
+        
+    def currentCellChanged(self):
+        col = self.app.skywardTable.currentColumn()
+        row = self.app.skywardTable.currentRow()
+        print("Column: " + str(col) + " Row: " + str(row))
+    
+   
+    def load_skyward_view(self, reload=True):
+        # TODO: fix this; kinda convoluted
+        """
+        Update the Skyward table UI with the data from the database
+        """
+        if reload and not self.load_skyward_data():
+            return False  # if reload was requested, and failed, return
+        # TODO: self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table
+        # show filters
+        # TODO: self.classesFilter.show()
+        # TODO: self.weeksFilter.show()
+
+        # load data to table
+        # TODO: self.load_custom_classnames()  # load custom class names, set to self._class_ids
+        # clear data
+        self.app.skywardTable.clear()
+        # TODO: self.classesFilter.clear()
+        # add "All" to classes filter
+        # TODO: self.classesFilter.addItem('All')
+        # TODO: self.classesFilter.setCurrentRow(0)
+        # set horizontal table headers (grading periods)
+        for n, data in enumerate(self.headers):
+            # add text to table header
+            self.app.skywardTable.setHorizontalHeaderItem(
+                n, self.create_table_item(data, n==(len(self.headers)-1) )
+            )
+            
+
+        # set grades, class filter items, and vertical table headers (classes)
+        for n, data in enumerate(self.skyward_data):
+            # load items
+            table_item, item = self.get_class_name_items(data, self._class_ids)
+            # add item to table
+            # TODO: self.classesFilter.addItem(item)
+            if n >= self.app.skywardTable.rowCount():
+                self.app.skywardTable.insertRow(self.app.skywardTable.rowCount())
+            # add grades to table
+            for m, grade in enumerate(data['grades']):
+                self.app.skywardTable.setItem(n, m, self.create_table_item(grade, n==(len(self.skyward_data)-1) ))
+            # set class name vertical header in table
+            table_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            self.app.skywardTable.setVerticalHeaderItem(n, table_item)
+
+        # TODO: self.filter_selected('')
+  
+        # self.app.skywardTable.setFixedSize(self.app.skywardTable.horizontalHeader().length(), self.app.skywardTable.verticalHeader().length())
+        
+        return True
+    
+    def load_skyward_data(self):
+        """
+        Loads the Skyward data from database
+        """
+        # Return error in status bar if no data already exists
+        if not os.path.exists('data'):
+            self.app.lastRefreshedLabel.setText('Please log into Skyward')
+            return False
+        # Load data from file
+        with open('data/SkywardExport.json') as f:
+            skyward_data = json.load(f)  # read data
+        # Split headers to self.headers, and all class data to self.skyward_data (merges Ben Barber and Home Campus)
+        self.headers = skyward_data[0][0]['headers'][1:]
+        self.skyward_data = list(
+            chain.from_iterable([x[1:] for x in skyward_data])
+        )  # merge all classes together, skipping headers
+        # Get assignment files directories
+        self.assignment_files = [x['assignments'] for x in self.skyward_data]
+        # Get assignments
+        for file_dir in self.assignment_files:
+            with open(file_dir) as f:
+                load = json.load(f)
+                self.class_assignments.append(load)
+                # print([file_dir, load])
+        # Get the last updated date of the data
+        with open('data/updated.json') as f:
+            self.app.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
+        return True  # return True if data was loaded successfully
+    
+    def create_table_item(self, data, is_last_item):
+        """
+        Returns a table item with the given data
+        """
+        
+        if not is_last_item:
+            table_item = QTableWidgetItem(data.get('text', ''))
+        else:
+            table_item = QTableWidgetItem(data.get('text', ''))
+        
+        if data.get('tooltip'):
+            # set tooltip
+            table_item.setToolTip(data['tooltip'])
+        
+        
+        table_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        return table_item
+    
+    def get_class_name_items(self, data, class_ids):
+        table_item = QTableWidgetItem()
+        item = QListWidgetItem()
+        if data['class_info']['id'] in class_ids:
+            # if the class has a custom name saved, use it
+            table_item.setText(class_ids[data['class_info']['id']])
+            item.setText(class_ids[data['class_info']['id']])
+        else:
+            # otherwise, use the class name from Skyward
+            table_item.setText(data['class_info']['class'])
+            item.setText(data['class_info']['class'])
+        # make item editable
+        item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+        return table_item, item
+    
+    def filter_selected(self, filter_type):
+        """
+        Runs whenever a filter is clicked
+        Changes skyward views
+        """
+        # Get indexes of selected filter item
+        classes_item_index = self.get_selected_filter_index(self.classesFilter)
+        # If they are both set to all then change to table view
+        if classes_item_index == 0:
+            self.app.skywardStack.setCurrentIndex(2)  # set to skyward table view
+        else:
+            self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
+            if filter_type == 'class':
+                # load the tree view
+                self.load_class_view(
+                    self.class_assignments[classes_item_index - 1],
+                    self.weeksFilter.currentItem().text(),
+                    True,
+                )
+            elif filter_type == 'week':
+                # load the tree view
+                self.load_class_view(
+                    self.class_assignments[classes_item_index - 1],
+                    self.weeksFilter.currentItem().text(),
+                    not self.classViewItems,
+                )
+
+        # Hide skyward table columns according to filters
+        self.hide_skyward_table_columns()
+        # Calculate and display experiment grades if its not hidden
+        if not self.experimentGroup.isHidden():
+            self.display_experiment_grades()
+
+    def hide_skyward_table_columns(self):
+        """
+        Hides/shows skyward table columns depending on filters and settings
+        """
+        # get weeks filter index
+        weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
+        for n, h in enumerate(self.headers):
+            if weeks_item_index != 0:
+                # print(weeks_item_index, h['text'])
+                self.skywardTable.setColumnHidden(
+                    n,
+                    (str(weeks_item_index) not in h['text'])
+                    or (self.hideCitizen and (n in self.citizenColumns)),
+                )
+            else:
+                self.skywardTable.setColumnHidden(
+                    n, self.hideCitizen and (n in self.citizenColumns)
+                )
+
+    def load_class_view(self, assignments, week_filter, should_regen):
+        """
+        Loads the class view for a class
+        :param should_regen: Determines if class view should be fully regenerated from assignments list or just toggle rows
+        :param assignments: List of assignments in the selected class
+        :param week_filter: Current selected 6-weeks filter (text)
+        """
+        if should_regen:
+            # Clear tree view (does not clear headers)
+            self.classViewTree.clear()
+            self.classViewItems = []
+            for assignment in assignments:
+                # Only add assignment if in the correct 6-weeks
+                # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
+                if 'due' in assignment:
+                    # Hide weeks column if not in all-weeks filter
+                    self.hide_weeks_column(week_filter)
+                    # create class view item
+                    item = skywardview.create_class_view_item(assignment)
+
+                    self.classViewItems.append(item)
+                    # Add assignment to tree
+                    self.classViewTree.addTopLevelItem(item)
+        else:
+            # Hide weeks column if not in all-weeks filter
+            self.hide_weeks_column(week_filter)
+        self.classViewItems = skywardview.hide_items_by_six_weeks(self.classViewItems, week_filter)
+
+    def hide_weeks_column(self, week_filter):
+        """
+        Hides weeks column if not in all-weeks filter
+        :param week_filter: The text of the selected six-weeks filter
+        """
+        if week_filter.lower() != 'all':
+            self.classViewTree.header().hideSection(3)
+        else:
+            self.classViewTree.header().showSection(3)
+
 
 
 def create_class_view_item(assignment):
@@ -28,40 +257,6 @@ def create_class_view_item(assignment):
     week = assignment['due'][1].strip('()').lower()
     item.setText(3, week)
     return item
-
-
-def create_table_item(data, dark_mode):
-    """
-    Returns a table item with the given data
-    """
-    table_item = QtWidgets.QTableWidgetItem(data.get('text', ''))
-    if data.get('highlighted'):
-        if dark_mode:
-            # set dark mode highlight color
-            table_item.setBackground(QtGui.QColor(52, 79, 113))
-        else:
-            # set light mode highlight color
-            table_item.setBackground(QtGui.QColor(255, 255, 120))
-    if data.get('tooltip'):
-        # set tooltip
-        table_item.setToolTip(data['tooltip'])
-    return table_item
-
-
-def get_class_name_items(data, class_ids):
-    table_item = QtWidgets.QTableWidgetItem()
-    item = QtWidgets.QListWidgetItem()
-    if data['class_info']['id'] in class_ids:
-        # if the class has a custom name saved, use it
-        table_item.setText(class_ids[data['class_info']['id']])
-        item.setText(class_ids[data['class_info']['id']])
-    else:
-        # otherwise, use the class name from Skyward
-        table_item.setText(data['class_info']['class'])
-        item.setText(data['class_info']['class'])
-    # make item editable
-    item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
-    return table_item, item
 
 
 def hide_items_by_six_weeks(items_list, week_filter_text):

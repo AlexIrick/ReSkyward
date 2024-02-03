@@ -1,0 +1,6 @@
+QWidget#timerPage{
+    background-color: rgb(32, 32, 32);
+    margin: 64px;
+    border-radius: 10px;
+    border: 1px solid rgb(35, 35, 35);
+}

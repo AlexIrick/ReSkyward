@@ -15,7 +15,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QApplication, QLineEdit, QListWidgetItem, QMainWindow, QTreeWidgetItem
 
 from ReSkyward.mixin import *
-from ReSkyward.ui import BellUI, config, experimentmode, login, skywardview
+from ReSkyward.ui import BellUI, config, experimentmode, skywardview
 
 # from qt_material import list_themes, apply_stylesheet
 
@@ -258,103 +258,15 @@ class UI(QMainWindow):
         Runs everytime a class name is edited.
         Updates vertical header and saves to file
         """
-        index = model_index.row()  # Get row index
-        text = self.classesFilter.item(index).text()
-        self._class_ids[self.skyward_data[index - 1]['class_info']['id']] = text
-        self.skywardTable.setVerticalHeaderItem(index - 1, QtWidgets.QTableWidgetItem(text))
-        with open('data/CustomNames.json', 'w') as f:
-            json.dump(self._class_ids, f, indent=4)
+        if self.skyward_data is not None:
+            index = model_index.row()  # Get row index
+            text = self.classesFilter.item(index).text()
+            self._class_ids[self.skyward_data[index - 1]['class_info']['id']] = text
+            self.skywardTable.setVerticalHeaderItem(index - 1, QtWidgets.QTableWidgetItem(text))
+            with open('data/CustomNames.json', 'w') as f:
+                json.dump(self._class_ids, f, indent=4)
 
-    def filter_selected(self, filter_type):
-        """
-        Runs whenever a filter is clicked
-        Changes skyward views
-        """
-        # Get indexes of selected filter item
-        classes_item_index = self.get_selected_filter_index(self.classesFilter)
-        # If they are both set to all then change to table view
-        if classes_item_index == 0:
-            self.skywardViewStackedWidget.setCurrentIndex(2)  # set to skyward table view
-        else:
-            self.skywardViewStackedWidget.setCurrentIndex(1)  # set to assignments view
-            if filter_type == 'class':
-                # load the tree view
-                self.load_class_view(
-                    self.class_assignments[classes_item_index - 1],
-                    self.weeksFilter.currentItem().text(),
-                    True,
-                )
-            elif filter_type == 'week':
-                # load the tree view
-                self.load_class_view(
-                    self.class_assignments[classes_item_index - 1],
-                    self.weeksFilter.currentItem().text(),
-                    not self.classViewItems,
-                )
-
-        # Hide skyward table columns according to filters
-        self.hide_skyward_table_columns()
-        # Calculate and display experiment grades if its not hidden
-        if not self.experimentGroup.isHidden():
-            self.display_experiment_grades()
-
-    def hide_skyward_table_columns(self):
-        """
-        Hides/shows skyward table columns depending on filters and settings
-        """
-        # get weeks filter index
-        weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
-        for n, h in enumerate(self.headers):
-            if weeks_item_index != 0:
-                # print(weeks_item_index, h['text'])
-                self.skywardTable.setColumnHidden(
-                    n,
-                    (str(weeks_item_index) not in h['text'])
-                    or (self.hideCitizen and (n in self.citizenColumns)),
-                )
-            else:
-                self.skywardTable.setColumnHidden(
-                    n, self.hideCitizen and (n in self.citizenColumns)
-                )
-
-    def load_class_view(self, assignments, week_filter, should_regen):
-        """
-        Loads the class view for a class
-        :param should_regen: Determines if class view should be fully regenerated from assignments list or just toggle rows
-        :param assignments: List of assignments in the selected class
-        :param week_filter: Current selected 6-weeks filter (text)
-        """
-        if should_regen:
-            # Clear tree view (does not clear headers)
-            self.classViewTree.clear()
-            self.classViewItems = []
-            for assignment in assignments:
-                # Only add assignment if in the correct 6-weeks
-                # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
-                if 'due' in assignment:
-                    # Hide weeks column if not in all-weeks filter
-                    self.hide_weeks_column(week_filter)
-                    # create class view item
-                    item = skywardview.create_class_view_item(assignment)
-
-                    self.classViewItems.append(item)
-                    # Add assignment to tree
-                    self.classViewTree.addTopLevelItem(item)
-        else:
-            # Hide weeks column if not in all-weeks filter
-            self.hide_weeks_column(week_filter)
-        self.classViewItems = skywardview.hide_items_by_six_weeks(self.classViewItems, week_filter)
-
-    def hide_weeks_column(self, week_filter):
-        """
-        Hides weeks column if not in all-weeks filter
-        :param week_filter: The text of the selected six-weeks filter
-        """
-        if week_filter.lower() != 'all':
-            self.classViewTree.header().hideSection(3)
-        else:
-            self.classViewTree.header().showSection(3)
-
+    
     def load_custom_classnames(self):
         """
         Loads custom class names from file to self._class_ids
@@ -386,6 +298,7 @@ class UI(QMainWindow):
         dark_title_bar(int(msg_box.winId()))  # set custom dark title bar color
         return msg_box.exec_()  # returns the button clicked (ex: QtWidgets.QMessageBox.Ok)
 
+#
     def load_skyward_data(self):
         """
         Loads the Skyward data from database
@@ -415,6 +328,7 @@ class UI(QMainWindow):
             self.lastRefreshedLabel.setText('Last refreshed: ' + json.load(f)['date'])
         return True  # return True if data was loaded successfully
 
+#
     def load_skyward(self, reload=True):
         # TODO: fix this; kinda convoluted
         """

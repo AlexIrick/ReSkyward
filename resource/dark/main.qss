@@ -1,0 +1,31 @@
+QStackedWidget#tabsStack > QWidget{
+    border: 1px solid rgb(29, 29, 29);
+    background-color: rgb(39, 39, 39);
+    border-top-left-radius: 10px;
+}
+
+QHBoxLayout#navContainer {
+    background-color: rgb(32, 32, 32);
+}
+
+NavigationPushButton {
+    font: 16px 'Google Sans';
+}
+
+Window {
+    background-color: rgb(32, 32, 32);
+}
+
+
+ScrollArea { 
+    background: transparent; 
+    padding-right: 16px; /* distance between scroll bar and content */
+}
+
+ScrollArea > QWidget > QWidget { 
+    background: transparent; 
+}
+/* ScrollArea > QWidget > QScrollBar { background: palette(base); } */
+
+
+

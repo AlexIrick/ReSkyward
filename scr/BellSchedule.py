@@ -69,7 +69,7 @@ DISTRICTS
 
 class GetBellDistricts(BellScheduleParent):
     def get(self, id=0, **args):
-        return {d['id']: BellDistrict(d) for d in super().get(id=id, **args)}
+        return {d['name']: BellDistrict(d) for d in super().get(id=id, **args)}
 
 
 class BellPopularDistricts(GetBellDistricts):
@@ -93,7 +93,7 @@ class GetBellSchool(BellScheduleParent):
     """district: BellDistrict"""
 
     def get(self, district: BellDistrict):
-        return {d['id']: BellSchool(d) for d in super().get(id=district.id)}
+        return {d['name']: BellSchool(d) for d in super().get(id=district.id)}
 
 
 class BellSchoolsPerDistrict(GetBellSchool):
@@ -129,7 +129,7 @@ class GetBellGroup(BellScheduleParent):
     """school: BellSchool"""
 
     def get(self, school: BellSchool):
-        return {d['id']: BellGroup(d) for d in super().get(id=school.id)}
+        return {d['name']: BellGroup(d) for d in super().get(id=school.id)}
 
 
 class BellGroupsPerSchool(GetBellGroup):
@@ -327,7 +327,7 @@ def create_session():
 
 
 def get_districts(sess):
-    return BellPopularDistricts(sess).get()  # returns districts
+    return BellPopularDistricts(sess).get()  # returns popular districts
 
 
 def get_schools(sess, selected_district):

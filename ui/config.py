@@ -16,15 +16,16 @@ class Config:
         self.load()
 
     def load(self):
-        self.app.hideCitizen = self.config.get('hideCitizen')
-        self.app.hideCitizenCheck.setChecked(self.app.hideCitizen)
+        # TODO
+        # self.app.hideCitizenCheck.setChecked(self.config.get('hideCitizen'))
 
-        self.app.ref_on_launch = self.config.get('refreshOnLaunch')
-        self.app.refreshOnLaunchCheck.setChecked(self.app.ref_on_launch)
+        # self.app.ref_on_launch = self.config.get('refreshOnLaunch')
+        # self.app.refreshOnLaunchCheck.setChecked(self.app.ref_on_launch)
 
-        bell_ids = self.config.get('bellIDs')
-        if bell_ids[0] is not None:
-            self.app.bellUI.set_bell_ids(bell_ids)
+        # bell_ids = self.config.get('bellIDs')
+        # if bell_ids is not None and bell_ids[0] is not None:
+        #     self.app.bellUI.set_bell_ids(bell_ids)
+        pass
 
     def save(self):
         self.config.save()

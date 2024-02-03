@@ -6,8 +6,10 @@ data
 *.pyc
 __pycache__
 .idea
+.vscode
 encrypted.bin
 aes.bin
 config.json
 user/settings_config.json
 grades.db
+ui/NewMainWindow2_ui.py

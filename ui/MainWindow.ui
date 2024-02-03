@@ -393,6 +393,7 @@
                        <widget class="QLabel" name="bellNextLabel">
                         <property name="font">
                          <font>
+                          <family>Poppins Medium</family>
                           <pointsize>9</pointsize>
                          </font>
                         </property>
@@ -427,6 +428,7 @@
                         </property>
                         <property name="font">
                          <font>
+                          <family>Poppins Medium</family>
                           <pointsize>9</pointsize>
                          </font>
                         </property>
@@ -836,7 +838,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="notLoggedInPage">
                <layout class="QGridLayout" name="gridLayout_9">
@@ -1804,7 +1806,7 @@
                       <rect>
                        <x>0</x>
                        <y>0</y>
-                       <width>641</width>
+                       <width>191</width>
                        <height>388</height>
                       </rect>
                      </property>
@@ -1892,6 +1894,7 @@
                              </property>
                              <property name="font">
                               <font>
+                               <family>Poppins Medium</family>
                                <pointsize>8</pointsize>
                               </font>
                              </property>
@@ -1942,6 +1945,7 @@
                              </property>
                              <property name="font">
                               <font>
+                               <family>Poppins Medium</family>
                                <pointsize>8</pointsize>
                               </font>
                              </property>

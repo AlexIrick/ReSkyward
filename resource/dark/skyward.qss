@@ -1,0 +1,116 @@
+QWidget#tablePage{
+    background-color: rgb(32, 32, 32);
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid rgb(35, 35, 35);
+}
+
+TableWidget { 
+    padding-right: 16px; /* distance between scroll bar and content */
+    padding-bottom: 16px;   
+}
+
+
+
+QTableView {
+    background-color: transparent;
+    outline: none;
+    selection-background-color: transparent;
+    alternate-background-color: transparent;
+    /* gridline-color: rgb(65, 65, 65); */
+    gridline-color: rgb(32, 32, 32);
+}
+
+
+QTableView::item {
+    font: 13px 'Google Sans';
+    background: transparent;
+    padding-left: 16px;
+    padding-right: 16px;
+    height: 35px;
+}
+
+
+QTableView::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+
+QHeaderView {
+    background-color: transparent;
+}
+
+QHeaderView::section {
+    background-color: transparent;
+    color: white;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: transparent;
+    font: 13px 'Google Sans';
+}
+
+QHeaderView::section [isBorderVisible=true]{
+    background-color: transparent;
+    color: white;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: 1px solid rgb(55, 55, 55);
+}
+
+QHeaderView::section:horizontal {
+    border-left: none;
+    height: 33px;
+}
+
+QHeaderView::section:vertical {
+    border-top: none;
+}
+
+/* corner rounding */
+
+QHeaderView::section:horizontal:last {
+    /* border-right: 1px solid rgb(55, 55, 55); */
+    border-top-right-radius: 10px;
+}
+
+QHeaderView::section:vertical:last {
+    /* border-bottom: 1px solid rgb(55, 55, 55); */
+    border-bottom-left-radius: 10px;
+}
+
+QTableCornerButton::section {
+    background-color: transparent;
+    /* border: 1px solid rgb(55, 55, 55); */
+    border: transparent;
+    border-top-left-radius: 10px;
+}
+
+
+/* misc */
+
+QTableCornerButton::section:pressed {
+    background-color: rgba(0, 0, 0, 12);
+}
+
+
+QHeaderView::section:checked {
+    background-color: transparent;
+}
+
+QHeaderView::down-arrow {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    margin-right: 6px;
+    image: url(:/qfluentwidgets/images/table_view/Down_black.svg);
+}
+
+QHeaderView::up-arrow {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    margin-right: 6px;
+    image: url(:/qfluentwidgets/images/table_view/Up_black.svg);
+}
