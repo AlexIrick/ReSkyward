@@ -40,10 +40,10 @@ class SettingsView():
         app.loginCard.addWidgetToView(app.passwordInput)
         app.loginCard.addWidgetToView(app.loginButton)
         app.loginCard.addWidgetToView(app.rememberMeCheck)
-        app.settingsContent.addWidget(app.loginCard)
+        app.settingsSkywardLay.addWidget(app.loginCard)
         
         app.citizenCard = SwitchSettingCard(FIF.FILTER, "Hide Citizen", "Hide the citizen columns of the Skyward table")
-        app.settingsContent.addWidget(app.citizenCard)
+        app.settingsSkywardLay.addWidget(app.citizenCard)
         app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
         
         # TODO: self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)

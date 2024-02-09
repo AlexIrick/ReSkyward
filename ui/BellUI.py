@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QListWidgetItem, QCompleter
 from qfluentwidgets import FlowLayout, SearchLineEdit
+from qfluentwidgets import FluentIcon as FIF
 
 from ReSkyward.scr import BellSchedule
 
@@ -21,8 +22,6 @@ class BellUI:
         
         # self.set_search_edit(app.schoolSearch)
         # self.set_search_edit(app.groupSearch)
-        
-
         
         # app.bellSelectPage.setStretch(1)
         
@@ -50,16 +49,20 @@ class BellUI:
         
         app.district_loaded.connect(self.show_bell_districts)
         app.districtNextBtn.clicked.connect(self.district_changed)
+        app.districtNextBtn.setIcon(FIF.CHEVRON_RIGHT)
         
         app.school_loaded.connect(self.show_bell_schools)
         app.schoolNextBtn.clicked.connect(self.school_changed)
+        app.schoolNextBtn.setIcon(FIF.CHEVRON_RIGHT)
         
         app.group_loaded.connect(self.show_bell_groups)
         app.groupNextBtn.clicked.connect(self.group_changed)
+        app.groupNextBtn.setIcon(FIF.CHEVRON_RIGHT)
         
         self.app.schedule_loaded.connect(self.start_bell_timer)
 
-
+        self.app.bellStack.setCurrentIndex(0)
+        
         # Start session
         self.sess = BellSchedule.create_session()
         # # Scrape districts
@@ -157,6 +160,15 @@ class BellUI:
             # self.app.bellStackedWidget.show()
             # self.app.bellToggleButton.setText('')
             # self.app.bellToggleButton.setFont(QFont('Segoe MDL2 Assets', 14))
+            
+            if None in self.bell_ids:
+                # If an id is missing, set bell tab view to 'No Schedule Set' Page
+                self.app.bellStack.setCurrentIndex(0)
+                return
+            else:
+                # Set bell tab view to 'Loading' Page
+                self.app.bellStack.setCurrentIndex(2)
+            
             Thread(
                 target=self.get_bell_data,
                 daemon=True,
@@ -184,6 +196,7 @@ class BellUI:
             self.app.bellCurrentLabel.setText(display_data['current_period'])
             self.app.bellCountdownLabel.setText(display_data['time_left'])
             self.app.bellNextLabel.setText(display_data['next_period'])
+            self.app.bellThenLabel.setText(display_data['then_period'])
             self.app.bellStack.setCurrentIndex(1)
         
 
@@ -197,12 +210,8 @@ class BellUI:
         When current item in the district list is changed, update the id and populate districts list.
         Also called by list.setCurrentRow()
         """
-        # if self.app.bellDistrictsList.currentRow() == -1:
-        #     return
-
-        # d_id = self.district_items_dict[str(self.app.bellDistrictsList.currentItem())]
-        # this if condition is to prevent clearing other bell level ids when loading config because of setCurrentRow()
-        
+        if not self.app.districtSearch.text() in self.districts_scraper_dict:
+            return
         d_id = self.districts_scraper_dict[self.app.districtSearch.text()].id
         
         if self.bell_ids[0] != d_id:
@@ -210,9 +219,8 @@ class BellUI:
             # Clear school and group ids
             self.bell_ids[1] = None
             self.bell_ids[2] = None
-
-            
-            # self.row_changed_finish()
+            self.app.schoolWidget.setEnabled(False)
+            self.app.groupWidget.setEnabled(False)
             
         # Scrape schools
         Thread(
@@ -240,13 +248,16 @@ class BellUI:
         Also called by list.setCurrentRow()
         """
         
-# d_id = self.districts_scraper_dict[self.app.districtSearch.text()].id
-        s_id = self.schools_scraper_dict[self.app.schoolSearch.text()].id
+        if self.app.schoolSearch.text() in self.schools_scraper_dict:
+            s_id = self.schools_scraper_dict[self.app.schoolSearch.text()].id
+        else:
+            return
         # this if condition is to prevent clearing other bell level ids when loading config because of setCurrentRow()
         if self.bell_ids[1] != s_id:
             self.bell_ids[1] = s_id
             # Clear group ids
             self.bell_ids[2] = None
+            self.app.groupWidget.setEnabled(False)
 
         # Scrape schools
         Thread(
@@ -276,14 +287,10 @@ class BellUI:
         Also called by list.setCurrentRow()
         """
         
-        # if self.app.bellGroupsList.currentRow() == -1:
-        #     return
-
-        # Get selected group id
-        # g_id = self.group_items_dict[str(self.app.bellGroupsList.currentItem())]
-        print("group changed")
-        print(self.groups_scraper_dict)
-        g_id = self.groups_scraper_dict[self.app.groupSearch.text()].id
+        if self.app.groupSearch.text() in self.groups_scraper_dict:
+            g_id = self.groups_scraper_dict[self.app.groupSearch.text()].id
+        else:
+            return
         # this if condition is to prevent clearing other bell level ids when loading config because of setCurrentRow()
         if self.bell_ids[2] != g_id:
             self.bell_ids[2] = g_id
@@ -309,14 +316,6 @@ class BellUI:
         """
         Gets bell rules/schedule
         """
-
-        if None in self.bell_ids:
-            # If an id is missing, set bell tab view to 'No Schedule Set' Page
-            self.app.bellStack.setCurrentIndex(0)
-            return
-        else:
-            # Set bell tab view to 'Loading' Page
-            self.app.bellStack.setCurrentIndex(2)
 
         # Scrape rules and schedule
         rules = BellSchedule.get_rules(self.sess, self.get_group_scraper_obj(), self.bell_schedule)
@@ -370,6 +369,8 @@ class BellUI:
         #     item.setText(school[1].name)
         #     self.school_items_dict[str(item)] = school[0]
         #     self.app.bellSchoolsList.addItem(item)
+        
+        self.app.schoolWidget.setEnabled(True)
 
     def show_bell_groups(self):
         if self.groups_scraper_dict is None:
@@ -383,6 +384,7 @@ class BellUI:
 
         self.set_search_edit(self.app.groupSearch, group_names)
         
+        self.app.groupWidget.setEnabled(True)
         
         # self.group_items_dict.clear()
         # self.app.bellGroupsList.clear()

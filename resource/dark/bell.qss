@@ -4,3 +4,9 @@ QWidget#timerPage{
     border-radius: 10px;
     border: 1px solid rgb(35, 35, 35);
 }
+
+
+QWidget#timerPage > timerVLayout{
+    margin: 64px;
+}
+

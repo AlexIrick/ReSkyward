@@ -393,6 +393,8 @@ def get_relevant_schedule_info(schedule_data):
         return
 
     display_data = {}
+    
+    # After school or no schedule:
     if 'is_school' in schedule_data and not schedule_data['is_school']:
         if 'next_school_day' in schedule_data:
             next_day = schedule_data['next_school_day']
@@ -417,19 +419,23 @@ def get_relevant_schedule_info(schedule_data):
 
     now = datetime.now()
     today_schedule = schedule_data['today_schedule']
-    # today = schedule_data['today']
-    # selected_school = schedule_data['selected_school']
+
     for id, period in today_schedule.items():
         if period.time > now:  # Find current class. Time can be compared as datetime objects
-            # print('Current class:', period.names, '\t\t')
-            display_data['current_period'] = "Current: " + " / ".join(period.names)
-            # print('Time left:', period.time - now, '\t\t')
+
+            display_data['current_period'] = " / ".join(period.names)
+
             time_left = str(period.time - now)
             # remove microseconds and leading 0 from hours
             display_data['time_left'] = re.search(r'(^[0:]+)?(.*)\.', time_left)[2]
 
             try:
-                display_data['next_period'] = "Next: " + " / ".join(today_schedule[id + 1].names)
+                display_data['next_period'] = "Until: " + " / ".join(today_schedule[id + 1].names)
+                
+                try:
+                    display_data['then_period'] = "Then: " + " / ".join(today_schedule[id + 2].names)
+                except KeyError:
+                    display_data['then_period'] = ''
             except KeyError:
                 display_data['next_period'] = 'Last class of the day!'
 
