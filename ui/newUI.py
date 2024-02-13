@@ -150,7 +150,7 @@ class Window(FramelessWindow):
     def initWindow(self):
         self.resize(900, 700)
         # self.setWindowIcon(QIcon('resource/logo.png'))
-        self.setWindowTitle('PyQt-Fluent-Widgets')
+        self.setWindowTitle('ReSkyward')
         self.titleBar.setAttribute(Qt.WA_StyledBackground)
 
         desktop = QApplication.desktop().availableGeometry()
