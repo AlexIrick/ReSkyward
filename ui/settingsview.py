@@ -44,7 +44,7 @@ class SettingsView():
         
         app.citizenCard = SwitchSettingCard(FIF.FILTER, "Hide Citizen", "Hide the citizen columns of the Skyward table")
         app.settingsSkywardLay.addWidget(app.citizenCard)
-        app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
+        
         
         # TODO: self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)
         # TODO: self.refreshOnLaunchCheck.stateChanged.connect(
@@ -52,8 +52,7 @@ class SettingsView():
         # )
         
         
-        # Config Setup
-        self.config = config.Config(self)
+        
         # Login Setup
         self.loginManager = login.LoginManager(app)
         app.loginButton.clicked.connect(self.login_connect)
@@ -62,9 +61,12 @@ class SettingsView():
         
         self.load_saved_creds()
         
+        # Config Setup
+        self.config = config.Config(app)
+        app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
+        
     def hideCitizenChanged(self, checked: bool):
         self.config.set_hide_citizen(checked)
-        print(checked)
         
     
     def login_connect(self):

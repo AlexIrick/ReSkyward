@@ -14,7 +14,7 @@ from qfluentwidgets import (NavigationInterface,NavigationItemPosition, setTheme
 from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessWindow, TitleBar
 
-from ReSkyward.ui import skywardview, settingsview, config, BellUI
+from ReSkyward.ui import skywardview, settingsview, BellUI
 
 # import qdarkstyle
 
@@ -81,7 +81,7 @@ class Window(FramelessWindow):
         # init views
         self.skywardView = skywardview.SkywardView(self)
         self.settingsView = settingsview.SettingsView(self)
-        self.config = config.Config(self)
+
         self.bell = BellUI.BellUI(self)
 
         self.initLayout()
@@ -196,11 +196,7 @@ class Window(FramelessWindow):
         return self.skywardView
       
 
-        
     
-
-
-
 
 # if __name__ == "__main__":
 #     # initialize app

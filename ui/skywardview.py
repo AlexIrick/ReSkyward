@@ -11,6 +11,8 @@ from PyQt5.QtCore import Qt
 class SkywardView():
     def __init__(self, app):
         self.app = app
+        
+        self.CITIZEN_COLUMNS = [1, 4, 7, 12, 15, 18]
 
         # Override the qfluent widgets default stylesheet
         app.skywardTable.setStyleSheet('')
@@ -172,24 +174,27 @@ class SkywardView():
         if not self.experimentGroup.isHidden():
             self.display_experiment_grades()
 
-    def hide_skyward_table_columns(self):
+    def hide_skyward_table_columns(self, hide_citizen):
         """
         Hides/shows skyward table columns depending on filters and settings
         """
         # get weeks filter index
-        weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
+        # weeks_item_index = self.get_selected_filter_index(self.weeksFilter)
+        
         for n, h in enumerate(self.headers):
-            if weeks_item_index != 0:
-                # print(weeks_item_index, h['text'])
-                self.skywardTable.setColumnHidden(
-                    n,
-                    (str(weeks_item_index) not in h['text'])
-                    or (self.hideCitizen and (n in self.citizenColumns)),
-                )
-            else:
-                self.skywardTable.setColumnHidden(
-                    n, self.hideCitizen and (n in self.citizenColumns)
-                )
+            self.app.skywardTable.setColumnHidden(n, (hide_citizen and (n in self.CITIZEN_COLUMNS)))
+            # if weeks_item_index != 0:
+                
+            #     # print(weeks_item_index, h['text'])
+            #     self.skywardTable.setColumnHidden(
+            #         n,
+            #         (str(weeks_item_index) not in h['text'])
+            #         or (self.hideCitizen and (n in self.citizenColumns)),
+            #     )
+            # else:
+            #     self.skywardTable.setColumnHidden(
+            #         n, self.hideCitizen and (n in self.citizenColumns)
+            #     )
 
     def load_class_view(self, assignments, week_filter, should_regen):
         """
@@ -228,6 +233,7 @@ class SkywardView():
             self.classViewTree.header().hideSection(3)
         else:
             self.classViewTree.header().showSection(3)
+            
 
 
 
