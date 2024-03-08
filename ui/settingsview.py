@@ -1,10 +1,10 @@
-from qfluentwidgets import ExpandSettingCard, SwitchSettingCard
+from qfluentwidgets import ExpandSettingCard, SwitchSettingCard, PushSettingCard
 from qfluentwidgets import FluentIcon as FIF
 # from qfluentwidgets import 
 from typing import Union
 from PyQt5.QtGui import QIcon
 from threading import Thread
-from ReSkyward.ui import login, config
+from ReSkyward.ui import login, config, BellUI
 
 class FixedExpandSettingCard(ExpandSettingCard):
     """ Expandable setting card """
@@ -25,6 +25,9 @@ class SettingsView():
     def __init__(self, app):
         self.app = app
         
+        # Config Setup
+        self.config = config.Config(app)
+        
         # Variables
         self.skywardUsername = None
         self.skywardPassword = None
@@ -42,8 +45,9 @@ class SettingsView():
         app.loginCard.addWidgetToView(app.rememberMeCheck)
         app.settingsSkywardLay.addWidget(app.loginCard)
         
-        app.citizenCard = SwitchSettingCard(FIF.FILTER, "Hide Citizen", "Hide the citizen columns of the Skyward table")
+        app.citizenCard = SwitchSettingCard(FIF.FILTER, "Hide the citizen columns of the Skyward table")
         app.settingsSkywardLay.addWidget(app.citizenCard)
+        app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
         
         
         # TODO: self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)
@@ -51,7 +55,10 @@ class SettingsView():
         #     lambda: self.config.set_refresh_on_launch(self.refreshOnLaunchCheck.isChecked())
         # )
         
-        
+        # Bell Card
+        app.changeBellCard = PushSettingCard("Reset", FIF.APPLICATION, "Change Bell Schedule")
+        app.settingsBellLay.addWidget(app.changeBellCard)
+        app.changeBellCard.button.clicked.connect(self.changeBellClicked)
         
         # Login Setup
         self.loginManager = login.LoginManager(app)
@@ -60,10 +67,13 @@ class SettingsView():
         self.app.database_refreshed.connect(self.app.get_skyward_view().load_skyward_view)
         
         self.load_saved_creds()
+        self.config.load()
         
-        # Config Setup
-        self.config = config.Config(app)
-        app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
+        
+    def changeBellClicked(self):
+        # self.config
+        self.app.bell.reset_connection()
+        
         
     def hideCitizenChanged(self, checked: bool):
         self.config.set_hide_citizen(checked)

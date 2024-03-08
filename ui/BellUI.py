@@ -61,12 +61,14 @@ class BellUI:
         
         self.app.schedule_loaded.connect(self.start_bell_timer)
 
-        self.app.bellStack.setCurrentIndex(0)
+        self.set_stack_view_index(0)
         
         # Start session
         self.sess = BellSchedule.create_session()
         # # Scrape districts
         Thread(target=self.scrape_districts, daemon=True).start()
+        
+    
         
     def start_bell_timer(self):
         self.refresh_view()
@@ -163,11 +165,11 @@ class BellUI:
             
             if None in self.bell_ids:
                 # If an id is missing, set bell tab view to 'No Schedule Set' Page
-                self.app.bellStack.setCurrentIndex(0)
+                self.set_stack_view_index(0)
                 return
             else:
                 # Set bell tab view to 'Loading' Page
-                self.app.bellStack.setCurrentIndex(2)
+                self.set_stack_view_index(2)
             
             Thread(
                 target=self.get_bell_data,
@@ -197,7 +199,7 @@ class BellUI:
             self.app.bellCountdownLabel.setText(display_data['time_left'])
             self.app.bellNextLabel.setText(display_data['next_period'])
             self.app.bellThenLabel.setText(display_data['then_period'])
-            self.app.bellStack.setCurrentIndex(1)
+            self.set_stack_view_index(1)
         
 
 
@@ -295,7 +297,7 @@ class BellUI:
         if self.bell_ids[2] != g_id:
             self.bell_ids[2] = g_id
 
-        self.row_changed_finish()
+        self.bell_set_enabled(True)
 
     def get_group_scraper_obj(self):
         """Returns the bell scraper object of the currently selected group"""
@@ -303,14 +305,6 @@ class BellUI:
 
         # return self.groups_scraper_dict[self.bell_ids[2]]
 
-    def row_changed_finish(self):
-        # Close/Disable bell tab
-        
-        self.bell_set_enabled(True)
-        
-
-        # TODO: Update config
-        # self.app.config.set_bell_schedule_ids(self.bell_ids)
 
     def get_bell_data(self):
         """
@@ -393,3 +387,39 @@ class BellUI:
         #     item.setText(group[1].name)
         #     self.group_items_dict[str(item)] = group[0]
         #     self.app.bellGroupsList.addItem(item)
+
+    def reset_connection(self):
+        self.bell_ids = [None, None, None]  # district, school, group
+
+        self.bell_schedule = None
+
+        # Matches ids to BellSchedule scraper info objects
+        # self.districts_scraper_dict = None
+        self.schools_scraper_dict = None
+        self.groups_scraper_dict = None
+        # self.selected_scraper_objs = [None, None, None]
+
+        # Matches list items to ids
+        # self.district_items_dict = {}
+        self.school_items_dict = {}
+        self.group_items_dict = {}
+
+        self.bellData = {}
+        
+        self.app.districtSearch.clear()
+        self.app.schoolSearch.clear()
+        self.app.schoolWidget.setEnabled(False)
+        self.app.groupSearch.clear()
+        self.app.groupWidget.setEnabled(False)
+        
+        self.app.bellRefreshTimer.stop()
+        self.set_stack_view_index(0)
+        
+    def set_stack_view_index(self, i):
+        """ Sets the current index of bell stack
+
+        Args:
+            i (int): 0='No Schedule Set' Page; 1='View' Page 2='Loading' Page
+        """        
+        
+        self.app.bellStack.setCurrentIndex(i)

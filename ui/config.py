@@ -13,7 +13,6 @@ class Config:
             }
         )
         self.app = app
-        self.load()
 
     def load(self):
         # TODO
