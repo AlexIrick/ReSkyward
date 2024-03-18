@@ -49,8 +49,7 @@ class SettingsView():
         app.settingsSkywardLay.addWidget(app.citizenCard)
         app.citizenCard.checkedChanged.connect(self.hideCitizenChanged)
         
-        
-        # TODO: self.hideCitizenCheck.stateChanged.connect(self.set_hide_citizen)
+
         # TODO: self.refreshOnLaunchCheck.stateChanged.connect(
         #     lambda: self.config.set_refresh_on_launch(self.refreshOnLaunchCheck.isChecked())
         # )
@@ -67,16 +66,23 @@ class SettingsView():
         self.app.database_refreshed.connect(self.app.get_skyward_view().load_skyward_view)
         
         self.load_saved_creds()
-        self.config.load()
+        self.load_config()
+        
+    def load_config(self):
+        # TODO
+        hide_citizen = self.config.get('hideCitizen')
+        self.app.citizenCard.setChecked(hide_citizen)
+        self.app.get_skyward_view().hide_skyward_table_columns(hide_citizen)
         
         
     def changeBellClicked(self):
-        # self.config
         self.app.bell.reset_connection()
         
         
     def hideCitizenChanged(self, checked: bool):
         self.config.set_hide_citizen(checked)
+        self.app.get_skyward_view().hide_skyward_table_columns(checked)
+
         
     
     def login_connect(self):

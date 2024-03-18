@@ -14,12 +14,7 @@ class Config:
         )
         self.app = app
 
-    def load(self):
-        # TODO
-        hide_citizen = self.get('hideCitizen')
-        self.app.citizenCard.setChecked(hide_citizen)
-        self.app.get_skyward_view().hide_skyward_table_columns(hide_citizen)
-
+    
         # self.app.ref_on_launch = self.config.get('refreshOnLaunch')
         # self.app.refreshOnLaunchCheck.setChecked(self.app.ref_on_launch)
 
@@ -37,9 +32,6 @@ class Config:
     def set_hide_citizen(self, hide_citizen: bool):
         self.config.set('hideCitizen', hide_citizen)
         self.save()
-        self.app.get_skyward_view().hide_skyward_table_columns(hide_citizen)
-
-        # self.app.hideCitizen = hide_citizen
         
     def get_hide_citizen(self):
         self.config.get('hideCitizen')
