@@ -1,12 +1,24 @@
 from threading import Thread
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QEvent, QObject, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QListWidgetItem, QCompleter
 from qfluentwidgets import FlowLayout, SearchLineEdit
 from qfluentwidgets import FluentIcon as FIF
 
+
 from ReSkyward.scr import BellSchedule
+
+
+class CustomEventFilter(QObject):
+    focusIn = pyqtSignal()
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.FocusIn:
+            # bring up your custom edit
+            # print("focus in")
+            self.focusIn.emit()
+            return True  # Event is handled
+        return False  # Event is not handled, continue normal processing
 
 
 class BellUI:
@@ -27,7 +39,6 @@ class BellUI:
         
 
         self.bell_ids = [None, None, None]  # district, school, group
-
         self.bell_schedule = None
 
         # Matches ids to BellSchedule scraper info objects
@@ -47,14 +58,24 @@ class BellUI:
         app.bellRefreshTimer.setInterval(1000)  # 1 seconds
         app.bellRefreshTimer.timeout.connect(self.refresh_view)
         
+        app.stack_switched.connect(self.tab_switched)
+        
+        # District
         app.district_loaded.connect(self.show_bell_districts)
         app.districtNextBtn.clicked.connect(self.district_changed)
         app.districtNextBtn.setIcon(FIF.CHEVRON_RIGHT)
         
+        self.filter = CustomEventFilter()
+        app.districtSearch.installEventFilter(self.filter)
+        # app.districtSearch.textEdited.connect(self.search_text_changed)
+        self.filter.focusIn.connect(self.focus_in)
+        
+        # School
         app.school_loaded.connect(self.show_bell_schools)
         app.schoolNextBtn.clicked.connect(self.school_changed)
         app.schoolNextBtn.setIcon(FIF.CHEVRON_RIGHT)
         
+        # Group
         app.group_loaded.connect(self.show_bell_groups)
         app.groupNextBtn.clicked.connect(self.group_changed)
         app.groupNextBtn.setIcon(FIF.CHEVRON_RIGHT)
@@ -68,8 +89,25 @@ class BellUI:
         # # Scrape districts
         Thread(target=self.scrape_districts, daemon=True).start()
         
-    
+    def focus_in(self):
+        #TODO:
+        # self.app.districtSearch.setText(" ")
+        # self.app.districtSearch._showCompleterMenu()
+        # self.app.districtSearch.setText("")
+        pass
         
+        # if self.app.districtSearch._completerMenu:
+        #     self.app.districtSearch._completerMenu.popup()
+        # print("text changed")    
+    
+    
+    def tab_switched(self, widget):
+        '''
+        called when app.stack_switched PyQtSignal is emitted()
+        '''
+        self.bell_set_enabled(widget==self.app.bellPage)
+ 
+ 
     def start_bell_timer(self):
         self.refresh_view()
         self.app.bellRefreshTimer.start()
@@ -77,10 +115,13 @@ class BellUI:
     def set_search_edit(self, search_edit, items):
         self.completer = QCompleter(items, search_edit)
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.setMaxVisibleItems(10)
+        self.completer.setMaxVisibleItems(7)
+        self.completer.setCompletionMode(QCompleter.CompletionMode(0)) # 0-PopupCompletion: only shows search results;
+                                                                    #  1-UnfilteredPopupCompletion, shows everything
         search_edit.setCompleter(self.completer)
         # search_edit.setClearButtonEnabled(True)
         # search_edit.setPlaceholderText('Search item')
+        
 
     def set_bell_ids(self, bell_ids):
         """
@@ -190,6 +231,7 @@ class BellUI:
         """
         # if self.app.bellStackedWidget.currentIndex() == 1:
         #     return
+        
         if display_data := BellSchedule.get_relevant_schedule_info(self.bellData):
             if 'selected_school' in self.bellData:
                 self.app.bellSchoolLabel.setText(self.bellData['selected_school'].name)
@@ -201,7 +243,6 @@ class BellUI:
             self.app.bellThenLabel.setText(display_data['then_period'])
             self.set_stack_view_index(1)
         
-
 
     def scrape_districts(self):
         self.districts_scraper_dict = BellSchedule.get_districts(self.sess)

@@ -56,7 +56,6 @@ class CustomTitleBar(TitleBar):
         self.iconLabel.setPixmap(QIcon(icon).pixmap(16, 16))
         
 
-
     
 class Window(FramelessWindow):
     def __init__(self, app):
@@ -69,6 +68,8 @@ class Window(FramelessWindow):
         
         self.setWindowTitle(f'ReSkyward - {version}')
         self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
+        
+        self.currentWidget = None
         
         # Connect focus gained/lost
         app.focusChanged.connect(self.onFocusChanged)
@@ -98,9 +99,10 @@ class Window(FramelessWindow):
     school_loaded = pyqtSignal()
     group_loaded = pyqtSignal()
     schedule_loaded = pyqtSignal()
+    stack_switched = pyqtSignal(QWidget)
         
         
-    def addSubInterface(self, interface, icon, text: str, position=NavigationItemPosition.TOP):   
+    def addSubInterface(self, interface: QWidget, icon, text: str, position=NavigationItemPosition.TOP):   
         # self.stackWidget.addWidget(interface)
         self.navInterface.addItem(
             routeKey=interface.objectName(),
@@ -161,9 +163,11 @@ class Window(FramelessWindow):
         # self.setQss('titlebar')
         
         
-    def switchTo(self, widget):
-        self.tabsStack.setCurrentWidget(widget)        
-        
+    def switchTo(self, widget: QWidget):
+        self.tabsStack.setCurrentWidget(widget)   
+        self.currentWidget = widget 
+        self.stack_switched.emit(widget)
+       
             
     def setQss(self, focus_style=''):
         color = 'dark' if isDarkTheme() else 'light'
