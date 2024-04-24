@@ -1,11 +1,12 @@
 import os
 from os.path import dirname, join
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTreeWidgetItem, QTableWidgetItem, QListWidgetItem
 import json
 from itertools import chain
-from qfluentwidgets import TableWidget
 from PyQt5.QtCore import Qt
+from ReSkyward.ui import pointTableWidget as ptw
+import re
 
 
 class SkywardView():
@@ -15,18 +16,55 @@ class SkywardView():
         self.CITIZEN_COLUMNS = [1, 4, 7, 12, 15, 18]
 
         # Override the qfluent widgets default stylesheet
+        app.skywardTable = ptw.PointTableWidget(3, 22)
+        app.tableHLayout.addWidget(app.skywardTable)
         app.skywardTable.setStyleSheet('')
         app.skywardTable.setBorderVisible(True)
+        app.classTable.setStyleSheet('')
+        app.classBackButton.clicked.connect(self.backButtonClicked)
+        
+        self.app.classTable.setTextElideMode(QtCore.Qt.TextElideMode.ElideNone)
         
         # Data variables
         self.class_assignments = []
         self._class_ids = {}
+        self.classViewItems = []
         
         app.skywardTable.currentCellChanged.connect(self.currentCellChanged)
+        app.skywardTable.itemClicked.connect(self.preLoadAssignmentView)
+        app.skywardTable.itemDoubleClicked.connect(self.openAssignmentView)
+        
+    def backButtonClicked(self):
+        """
+        Switches to table view upon clicking back button
+        """
+        self.app.skywardStack.setCurrentIndex(0)
+        
+    def openAssignmentView(self):
+        """
+        Switches to assignment view upon double clicking on a table item
+        """
+        
+        
+        if (len(self.classViewItems) > 0):
+            self.app.skywardStack.setCurrentIndex(1)
+            
+    def preLoadAssignmentView(self):
+        classes_item_index = self.app.skywardTable.currentRow()
+        col_text = self.app.skywardTable.horizontalHeaderItem(self.app.skywardTable.currentColumn()).text()
+        row_text = self.app.skywardTable.verticalHeaderItem(self.app.skywardTable.currentRow()).text()
+
+        self.load_class_view(
+                    self.class_assignments[classes_item_index],
+                    col_text, #self.weeksFilter.currentItem().text()
+                    row_text,
+                )
+
         
     def currentCellChanged(self):
         col = self.app.skywardTable.currentColumn()
         row = self.app.skywardTable.currentRow()
+        # self.app.skywardTable.item
         print("Column: " + str(col) + " Row: " + str(row))
     
    
@@ -141,7 +179,7 @@ class SkywardView():
         item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
         return table_item, item
     
-    def filter_selected(self, filter_type):
+    # def filter_selected(self, filter_type):
         """
         Runs whenever a filter is clicked
         Changes skyward views
@@ -196,33 +234,89 @@ class SkywardView():
             #         n, self.hideCitizen and (n in self.citizenColumns)
             #     )
 
-    def load_class_view(self, assignments, week_filter, should_regen):
+    def load_class_view(self, assignments, week_num: str, class_name: str):
         """
         Loads the class view for a class
-        :param should_regen: Determines if class view should be fully regenerated from assignments list or just toggle rows
         :param assignments: List of assignments in the selected class
-        :param week_filter: Current selected 6-weeks filter (text)
+        :param week_num: Current selected 6-weeks filter (text)
         """
-        if should_regen:
-            # Clear tree view (does not clear headers)
-            self.classViewTree.clear()
-            self.classViewItems = []
-            for assignment in assignments:
-                # Only add assignment if in the correct 6-weeks
-                # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
-                if 'due' in assignment:
-                    # Hide weeks column if not in all-weeks filter
-                    self.hide_weeks_column(week_filter)
-                    # create class view item
-                    item = skywardview.create_class_view_item(assignment)
+        
+        # self.app.classTable.clearContents()
 
-                    self.classViewItems.append(item)
-                    # Add assignment to tree
-                    self.classViewTree.addTopLevelItem(item)
+        current_row = 0
+        items = []
+        self.classViewItems = []
+        for assignment in assignments:
+            # Only add assignment if in the correct 6-weeks
+            # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
+            if 'col' in assignment and assignment['col'] == week_num:
+                current_row += 1
+                self.app.classTable.setRowCount(current_row)
+                # print(assignment['name'])
+                # Hide weeks column if not in all-weeks filter
+                # self.hide_weeks_column(week_filter)
+                
+                # create class view item
+                items = self.create_class_view_items(self.classViewItems, current_row-1, assignment, class_name)
+                print(len(self.classViewItems))
+                
+                for i in range(0, len(items)):
+                    self.classViewItems.append(items[i])
+                    # if not self.app.classTable.item(current_row-1, i):
+                    #     self.app.classTable.setItem(current_row-1, i, items[i]) # type: ignore
+                    self.app.classTable.setItem(current_row-1, i, items[i]) # type: ignore
+                    # self.classViewItems.append(items[i])
+                    
+                
+                # self.classViewItems.append(item)
+                # # Add assignment to tree
+                # self.classViewTree.addTopLevelItem(item)
+        self.app.classTable.setRowCount(current_row)
+        
+        
+        # self.hide_weeks_column(week_filter)
+        # self.classViewItems = hide_items_by_six_weeks(self.classViewItems, week_filter)
+        
+    def create_class_view_items(self, current_items, row, assignment, class_name:str):
+        """
+        Creates a class-view item
+        :param assignment: Data containing assignment info
+        :return: Item for class-view
+        """
+        # Get assignment data; only if it exists
+        items = [QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem()]
+        # for i in range(0, 6):
+        #     if len(current_items) < (5*(row) + i+1):
+        #         item = QTableWidgetItem()
+        #         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        #         items.append(item)
+        #     else:
+        #         print(5*(row) + i)
+        #         items.append(current_items[5*(row) + i])
+
+        
+        # items[0].
+        items[0].setText(class_name)
+        
+        if 'name' in assignment:
+            # Set assignment name
+            name = assignment['name']
+            items[1].setText(name)
+        if 'row' in assignment and 'grade' in assignment['row']:
+            # Set grade
+            grade = assignment['row']['grade']
+            items[2].setText(grade)
         else:
-            # Hide weeks column if not in all-weeks filter
-            self.hide_weeks_column(week_filter)
-        self.classViewItems = skywardview.hide_items_by_six_weeks(self.classViewItems, week_filter)
+            items[2].setText('---')
+
+        # Set due date
+        due_date = assignment['due'][0]
+        items[3].setText(due_date)
+        # Set 6 weeks
+        week = assignment['col'][0] #.strip('()').lower()
+        items[4].setText(week)
+        
+        return items
 
     def hide_weeks_column(self, week_filter):
         """
@@ -233,36 +327,9 @@ class SkywardView():
             self.classViewTree.header().hideSection(3)
         else:
             self.classViewTree.header().showSection(3)
-            
 
 
 
-def create_class_view_item(assignment):
-    """
-    Creates a class-view item
-    :param assignment: Data containing assignment info
-    :return: Item for class-view
-    """
-    # Get assignment data; only if it exists
-    item = QTreeWidgetItem()
-    if 'name' in assignment:
-        # Set assignment name
-        name = assignment['name']
-        item.setText(0, name)
-    if 'row' in assignment and 'grade' in assignment['row']:
-        # Set grade
-        grade = assignment['row']['grade']
-        item.setText(1, grade)
-    else:
-        item.setText(1, '---')
-
-    # Set due date
-    due_date = assignment['due'][0]
-    item.setText(2, due_date)
-    # Set 6 weeks
-    week = assignment['due'][1].strip('()').lower()
-    item.setText(3, week)
-    return item
 
 
 def hide_items_by_six_weeks(items_list, week_filter_text):

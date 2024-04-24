@@ -1,4 +1,4 @@
-QWidget#tablePage{
+QWidget#tablePage,QWidget#listPage{
     background-color: rgb(32, 32, 32);
     padding: 16px;
     border-radius: 10px;
@@ -19,6 +19,7 @@ QTableView {
     alternate-background-color: transparent;
     /* gridline-color: rgb(65, 65, 65); */
     gridline-color: rgb(32, 32, 32);
+    margin: 12px;
 }
 
 
@@ -28,6 +29,17 @@ QTableView::item {
     padding-left: 16px;
     padding-right: 16px;
     height: 35px;
+    text-align: center;
+}
+
+QTableView::item:horizontal:last {
+    /* border-top-right-radius: 10px; */
+    border-right: 1px solid rgb(55, 55, 55);
+}
+
+QTableView::item:vertical:last {
+    /* border-bottom-left-radius: 10px; */
+    border-bottom: 1px solid rgb(55, 55, 55);
 }
 
 
@@ -63,30 +75,37 @@ QHeaderView::section [isBorderVisible=true]{
 
 QHeaderView::section:horizontal {
     border-left: none;
+    border-bottom: 1px solid rgb(55, 55, 55);
+    border-top: 1px solid rgb(55, 55, 55);
     height: 33px;
 }
 
 QHeaderView::section:vertical {
     border-top: none;
+    border-right: 1px solid rgb(55, 55, 55);
+    border-left: 1px solid rgb(55, 55, 55);
 }
 
 /* corner rounding */
 
 QHeaderView::section:horizontal:last {
-    /* border-right: 1px solid rgb(55, 55, 55); */
     border-top-right-radius: 10px;
+    border-right: 1px solid rgb(55, 55, 55);
 }
 
 QHeaderView::section:vertical:last {
-    /* border-bottom: 1px solid rgb(55, 55, 55); */
     border-bottom-left-radius: 10px;
+    border-bottom: 1px solid rgb(55, 55, 55);
 }
+
+
 
 QTableCornerButton::section {
     background-color: transparent;
     /* border: 1px solid rgb(55, 55, 55); */
     border: transparent;
     border-top-left-radius: 10px;
+    border: 1px solid rgb(55, 55, 55);
 }
 
 

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
 from ReSkyward.mixin import *
-from ReSkyward.ui.main import UI
+# from ReSkyward.ui.main import UI
 from ReSkyward.ui.newUI import Window
 
 
@@ -34,24 +34,24 @@ if __name__ == "__main__":
     splash.show()
 
     # dark mode palette
-    if UI.DARK_MODE:
-        app.setStyle('Fusion')
-        dark_palette = QtGui.QPalette()
-        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.Light, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(39, 49, 58))
-        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25, 35, 45))
-        dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
-        dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.blue)
-        dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(59, 77, 100))
-        dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
-        app.setPalette(dark_palette)
+    # if UI.DARK_MODE:
+    app.setStyle('Fusion')
+    # dark_palette = QtGui.QPalette()
+    # dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 35, 45))
+    # dark_palette.setColor(QtGui.QPalette.Light, QtGui.QColor(39, 49, 58))
+    # dark_palette.setColor(QtGui.QPalette.Dark, QtGui.QColor(39, 49, 58))
+    # dark_palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
+    # dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(39, 49, 58))
+    # dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(25, 35, 45))
+    # dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
+    # dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
+    # dark_palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+    # dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(25, 35, 45))
+    # dark_palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
+    # dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.blue)
+    # dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(59, 77, 100))
+    # dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.white)
+    # app.setPalette(dark_palette)
 
     # Apply custom fonts
     [
