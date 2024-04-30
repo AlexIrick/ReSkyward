@@ -1,12 +1,13 @@
 import os
 from os.path import dirname, join
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QTreeWidgetItem, QTableWidgetItem, QListWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem, QListWidgetItem
 import json
 from itertools import chain
 from PyQt5.QtCore import Qt
 from ReSkyward.ui import pointTableWidget as ptw
-import re
+# import re
+import math
 
 
 class SkywardView():
@@ -29,6 +30,7 @@ class SkywardView():
         self.class_assignments = []
         self._class_ids = {}
         self.classViewItems = []
+        self.classViewRelatedRows = 0
         
         app.skywardTable.currentCellChanged.connect(self.currentCellChanged)
         app.skywardTable.itemClicked.connect(self.preLoadAssignmentView)
@@ -45,8 +47,7 @@ class SkywardView():
         Switches to assignment view upon double clicking on a table item
         """
         
-        
-        if (len(self.classViewItems) > 0):
+        if (self.classViewRelatedRows > 0):
             self.app.skywardStack.setCurrentIndex(1)
             
     def preLoadAssignmentView(self):
@@ -244,58 +245,62 @@ class SkywardView():
         # self.app.classTable.clearContents()
 
         current_row = 0
-        items = []
-        self.classViewItems = []
+
+        # self.classViewItems = []
         for assignment in assignments:
             # Only add assignment if in the correct 6-weeks
             # matching_weeks_filter = week_filter.lower() in [assignment['due'][1].strip('()').lower(), 'all']
             if 'col' in assignment and assignment['col'] == week_num:
+                # items = [QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem()]
                 current_row += 1
-                self.app.classTable.setRowCount(current_row)
+                
                 # print(assignment['name'])
                 # Hide weeks column if not in all-weeks filter
                 # self.hide_weeks_column(week_filter)
                 
                 # create class view item
-                items = self.create_class_view_items(self.classViewItems, current_row-1, assignment, class_name)
-                print(len(self.classViewItems))
-                
-                for i in range(0, len(items)):
-                    self.classViewItems.append(items[i])
-                    # if not self.app.classTable.item(current_row-1, i):
-                    #     self.app.classTable.setItem(current_row-1, i, items[i]) # type: ignore
-                    self.app.classTable.setItem(current_row-1, i, items[i]) # type: ignore
-                    # self.classViewItems.append(items[i])
-                    
-                
-                # self.classViewItems.append(item)
-                # # Add assignment to tree
-                # self.classViewTree.addTopLevelItem(item)
-        self.app.classTable.setRowCount(current_row)
+                # items = self.create_class_view_items(self.classViewItems[], assignment, class_name)
+                # print(len(self.classViewItems))
+                print(len(self.classViewItems), current_row)
+                if len(self.classViewItems) >= (current_row*5):
+                    # self.app.classTable.setRowCount(math.floor(len(self.classViewItems)/5))
+                    print("modify")
+                    print(assignment)
+                    print(self.classViewItems[(current_row-1)*5:current_row*5][1].text())
+                    self.create_class_view_items(self.classViewItems[(current_row-1)*5:current_row*5], assignment, class_name)
+                else:
+                    self.app.classTable.setRowCount(math.floor(len(self.classViewItems)/5)+1)
+                    self.classViewItems.append(QTableWidgetItem())
+                    self.classViewItems.append(QTableWidgetItem())
+                    self.classViewItems.append(QTableWidgetItem())
+                    self.classViewItems.append(QTableWidgetItem())
+                    self.classViewItems.append(QTableWidgetItem())
+                    self.create_class_view_items(self.classViewItems[(current_row-1)*5:current_row*5], assignment, class_name)
+                    # self.create_class_view_items(items, assignment, class_name)
+                    for i in range(0, len(self.classViewItems[(current_row-1)*5:current_row*5])):
+                        self.app.classTable.setItem(current_row-1, i, self.classViewItems[(current_row-1)*5:current_row*5][i])
+
+        # self.app.classTable.setRowCount(current_row)
+        print("--------")
+        for i in range(current_row, self.app.classTable.rowCount()): 
+            self.app.classTable.hideRow(i)
+        for i in range(0, current_row):
+            self.app.classTable.showRow(i)
+        self.classViewRelatedRows = current_row
+
         
         
         # self.hide_weeks_column(week_filter)
         # self.classViewItems = hide_items_by_six_weeks(self.classViewItems, week_filter)
         
-    def create_class_view_items(self, current_items, row, assignment, class_name:str):
+    def create_class_view_items(self, items, assignment, class_name:str):
         """
         Creates a class-view item
         :param assignment: Data containing assignment info
         :return: Item for class-view
         """
         # Get assignment data; only if it exists
-        items = [QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem(), QTableWidgetItem()]
-        # for i in range(0, 6):
-        #     if len(current_items) < (5*(row) + i+1):
-        #         item = QTableWidgetItem()
-        #         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        #         items.append(item)
-        #     else:
-        #         print(5*(row) + i)
-        #         items.append(current_items[5*(row) + i])
 
-        
-        # items[0].
         items[0].setText(class_name)
         
         if 'name' in assignment:
@@ -316,7 +321,7 @@ class SkywardView():
         week = assignment['col'][0] #.strip('()').lower()
         items[4].setText(week)
         
-        return items
+        # return items
 
     def hide_weeks_column(self, week_filter):
         """

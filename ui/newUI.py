@@ -6,15 +6,15 @@ from os.path import dirname, join
 # import qdarktheme
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QTableWidget)
+from PyQt5 import QtGui, uic
+from PyQt5.QtWidgets import (QApplication, QWidget)
 # from qfluentwidgets.components.widgets.frameless_window import FramelessWindow
 from qfluentwidgets import (NavigationInterface,NavigationItemPosition, setTheme, Theme, qrouter, isDarkTheme)
 from qfluentwidgets import FluentIcon as FIF
-from qframelesswindow import FramelessWindow, TitleBar
+from qframelesswindow import FramelessWindow
+import qtsass
 
-from ReSkyward.ui import skywardview, settingsview, BellUI
+from ReSkyward.ui import skywardview, settingsview, BellUI, customTitleBar
 
 # import qdarkstyle
 
@@ -26,44 +26,13 @@ except:
     sys.path.append(os.path.dirname(__file__))
 
     
-class CustomTitleBar(TitleBar):
-    """ Title bar with icon and title """
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        # add window icon
-        self.iconLabel = QLabel(self)
-        self.iconLabel.setFixedSize(16, 32) # width, height
-        self.iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hBoxLayout.insertSpacing(0, 16)
-        self.hBoxLayout.insertWidget(1, self.iconLabel, 0, Qt.AlignLeft | Qt.AlignBottom)
-        self.window().windowIconChanged.connect(self.setIcon)
-
-        # add title label
-        self.titleLabel = QLabel(self)
-        self.hBoxLayout.insertWidget(2, self.titleLabel, 0, Qt.AlignLeft | Qt.AlignBottom)
-        self.titleLabel.setObjectName('titleLabel')
-        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.window().windowTitleChanged.connect(self.setTitle)
-        
-        
-
-    def setTitle(self, title):
-        self.titleLabel.setText(title)
-        self.titleLabel.adjustSize()
-
-    def setIcon(self, icon):
-        self.iconLabel.setPixmap(QIcon(icon).pixmap(16, 16))
-        
-
-    
 class Window(FramelessWindow):
     def __init__(self, app):
         super().__init__()
         
         uic.loadUi(join(dirname(__file__), "NewMainWindow2.ui"), self)
         
-        self.setTitleBar(CustomTitleBar(self))
+        self.setTitleBar(customTitleBar.CustomTitleBar(self))
         setTheme(Theme.DARK)
         
         self.setWindowTitle(f'ReSkyward - {version}')
@@ -169,13 +138,33 @@ class Window(FramelessWindow):
         self.stack_switched.emit(widget)
        
             
-    def setQss(self, focus_style=''):
+    def setQss(self, in_focus=True):
+        
         color = 'dark' if isDarkTheme() else 'light'
+        
+        # style = ''
+        # with open(f'resource/{color}/main.scss', encoding='utf-8') as f:
+        #     style = f.read()
+        
         style=''
+        # for sheet in ['main', 'titlebar', 'skyward', 'bell']:
+        #     with open(f'resource/{color}/{sheet}.scss', encoding='utf-8') as f:
+        #         style += f.read()
+        # if not in_focus:
+        #     with open(f'resource/{color}/focusout.scss', encoding='utf-8') as f:
+        #         style += f.read()        
+        
+        # style = qtsass.compile(string=style)
+        
+        # style=''
         for sheet in ['main', 'titlebar', 'skyward', 'bell']:
             with open(f'resource/{color}/{sheet}.qss', encoding='utf-8') as f:
                 style += f.read()
-        self.setStyleSheet(style+focus_style)
+        if not in_focus:
+            with open(f'resource/{color}/focusout.qss', encoding='utf-8') as f:
+                style += f.read()
+        # print(style)
+        self.setStyleSheet(style)
     
     def onFocusChanged(self):
         '''
@@ -183,12 +172,7 @@ class Window(FramelessWindow):
         Updates the qss so that the title bar labels/buttons become partially transparent if focus is lost  
         '''
         self.in_focus = self.isActiveWindow()
-        if not self.in_focus:
-            color = 'dark' if isDarkTheme() else 'light'
-            with open(f'resource/{color}/focusout.qss', encoding='utf-8') as f:
-                self.setQss(f.read())
-        else:
-            self.setQss()
+        self.setQss(self.in_focus)
 
         
     def resizeEvent(self, e):
