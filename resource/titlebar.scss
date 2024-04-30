@@ -1,12 +1,10 @@
-/* --- TITLE BAR ---*/
-
 CustomTitleBar {
     background-color: transparent;
     /* background-color: rgb(32, 32, 32); */
 }
 
 CustomTitleBar>QLabel#titleLabel {
-    color: white;
+    color: $textColor;
     background: transparent;
     font: 12px 'Segoe UI';
     padding-left: 4px;
@@ -23,25 +21,25 @@ CustomTitleBar>QLabel#iconLabel {
 
 
 MinimizeButton {
-    qproperty-normalColor: white;
+    qproperty-normalColor: $textColor;
     qproperty-normalBackgroundColor: transparent;
-    qproperty-hoverColor: white;
-    qproperty-hoverBackgroundColor: rgba(255, 255, 255, 26);
-    qproperty-pressedColor: white;
-    qproperty-pressedBackgroundColor: rgba(255, 255, 255, 51)
+    qproperty-hoverColor: $textColor;
+    qproperty-hoverBackgroundColor: $titleBackgroundHover;
+    qproperty-pressedColor: $textColor;
+    qproperty-pressedBackgroundColor: $titleBackgroundPressed;
 }
 
 
 MaximizeButton {
-    qproperty-normalColor: white;
+    qproperty-normalColor: $textColor;
     qproperty-normalBackgroundColor: transparent;
-    qproperty-hoverColor: white;
-    qproperty-hoverBackgroundColor: rgba(255, 255, 255, 26);
-    qproperty-pressedColor: white;
-    qproperty-pressedBackgroundColor: rgba(255, 255, 255, 51)
+    qproperty-hoverColor: $textColor;
+    qproperty-hoverBackgroundColor: $titleBackgroundHover;
+    qproperty-pressedColor: $textColor;
+    qproperty-pressedBackgroundColor: $titleBackgroundPressed;
 }
 
 CloseButton {
-    qproperty-normalColor: white;
+    qproperty-normalColor: $textColor;
     qproperty-normalBackgroundColor: transparent;
 }

@@ -1,0 +1,17 @@
+// general / main.scss
+$primaryBackground: rgb(249, 249, 249);  // includes window background color
+$secondaryBackground: rgb(242, 242, 242);  // includes nav bar and stacked widget BG color
+$hardBorderColor: rgb(229, 229, 229);
+$softBorderColor: rgb(245, 245, 245);
+$textColor: black; 
+
+// skyward.scss
+$tableBorderColor: rgb(200, 200, 200);
+
+// focusout.scss
+$focusOutTextColor: rgba(0, 0, 0, 120);
+$focusOutTextColorNoAlpha: rgb(136, 136, 136);
+
+// titlebar.scss
+$titleBackgroundHover: rgba(0, 0, 0, 25);
+$titleBackgroundPressed: rgba(0, 0, 0, 55);

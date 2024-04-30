@@ -1,23 +1,28 @@
+// @use "skyward";
+
+
+$fontName: 'Google Sans';
+
 QLabel {
-    color: white;
+    color: $textColor;
 }
 
 QStackedWidget#tabsStack > QWidget{
-    border: 1px solid rgb(29, 29, 29);
-    background-color: rgb(39, 39, 39);
+    border: 1px solid $hardBorderColor;
+    background-color: $primaryBackground;
     border-top-left-radius: 10px;
 }
 
 QHBoxLayout#navContainer {
-    background-color: rgb(32, 32, 32);
+    background-color: $secondaryBackground;
 }
 
 NavigationPushButton {
-    font: 16px 'Google Sans';
+    font: 16px $fontName;
 }
 
 Window {
-    background-color: rgb(32, 32, 32);
+    background-color: $secondaryBackground;
 }
 
 

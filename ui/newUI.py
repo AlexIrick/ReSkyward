@@ -33,7 +33,7 @@ class Window(FramelessWindow):
         uic.loadUi(join(dirname(__file__), "NewMainWindow2.ui"), self)
         
         self.setTitleBar(customTitleBar.CustomTitleBar(self))
-        setTheme(Theme.DARK)
+        setTheme(Theme.LIGHT)
         
         self.setWindowTitle(f'ReSkyward - {version}')
         self.setWindowIcon(QtGui.QIcon('img/logo-min.svg'))
@@ -147,22 +147,22 @@ class Window(FramelessWindow):
         #     style = f.read()
         
         style=''
-        # for sheet in ['main', 'titlebar', 'skyward', 'bell']:
-        #     with open(f'resource/{color}/{sheet}.scss', encoding='utf-8') as f:
-        #         style += f.read()
-        # if not in_focus:
-        #     with open(f'resource/{color}/focusout.scss', encoding='utf-8') as f:
-        #         style += f.read()        
-        
-        # style = qtsass.compile(string=style)
-        
-        # style=''
-        for sheet in ['main', 'titlebar', 'skyward', 'bell']:
-            with open(f'resource/{color}/{sheet}.qss', encoding='utf-8') as f:
+        for sheet in [f'theme_{color}', 'main', 'titlebar', 'skyward', 'bell']:
+            with open(f'resource/{sheet}.scss', encoding='utf-8') as f:
                 style += f.read()
         if not in_focus:
-            with open(f'resource/{color}/focusout.qss', encoding='utf-8') as f:
-                style += f.read()
+            with open(f'resource/focusout.scss', encoding='utf-8') as f:
+                style += f.read()        
+        
+        style = qtsass.compile(string=style)
+        
+        # style=''
+        # for sheet in ['main', 'titlebar', 'skyward', 'bell']:
+        #     with open(f'resource/{color}/{sheet}.qss', encoding='utf-8') as f:
+        #         style += f.read()
+        # if not in_focus:
+        #     with open(f'resource/{color}/focusout.qss', encoding='utf-8') as f:
+        #         style += f.read()
         # print(style)
         self.setStyleSheet(style)
     

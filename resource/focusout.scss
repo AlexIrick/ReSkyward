@@ -1,0 +1,19 @@
+CustomTitleBar>QLabel#titleLabel {
+    color: $focusOutTextColor;
+}
+
+/* --- TITLE BAR BUTTONS (FOCUS OUT) --- */
+
+MinimizeButton {
+    qproperty-normalColor: $focusOutTextColor;
+}
+
+
+MaximizeButton {
+    qproperty-normalColor: $focusOutTextColor;
+}
+
+
+CloseButton {
+    qproperty-normalColor: $focusOutTextColorNoAlpha /* alpha not working for some reason so uses alpha compositing instead*/
+}
